@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project basedir="." default="all" name="condor-drmaa">
+
+   <property name="src" value="src"/>
+   <property name="build" value="build"/>
+   <property name="build.classes" value="${build}/classes"/>
+   <property name="dist.dir" value="dist"/>
+   <property name="lib.dir" value="lib"/>
+   <property name="util.dir" value="util"/>
+   <property name="version" value="0.3"/>
+
+   <property name="jar" value="${ant.project.name}-${version}.jar"/>
+
+   <path id="classpath">
+     <fileset dir="${lib.dir}" includes="**.jar"/>
+     <fileset dir="${util.dir}" includes="**.jar"/>
+   </path>
+
+   <target name="prepare" description="Prepare the build.">
+      <mkdir dir="${build}"/>
+      <mkdir dir="${build.classes}"/>
+      <mkdir dir="${dist.dir}"/>
+   </target>
+
+   <target depends="prepare" description="Compile the java classes." name="compile">
+      <javac debug="true" deprecation="true"
+             srcdir="${src}" destdir="${build.classes}">
+         <classpath refid="classpath"/>
+      </javac>
+   </target>
+
+   <target name="jar" depends="compile" description="Create the jar file">
+      <jar compress="true" basedir="${build.classes}" jarfile="${dist.dir}/${jar}">
+<!--         <service type="org.ggf.drmaa.SessionFactory" provider="net.sf.igs.SessionFactoryImpl"/> -->
+<!--        <metainf> -->
+       <metainf dir="./META-INF"/>
+<!--
+          <zipfileset dir="./services"/>
+-->
+      </jar>
+   </target>
+
+   <target name="clean" description="Clean all build products.">
+      <delete dir="${build.classes}"/>
+      <delete dir="${dist.dir}"/>
+   </target>
+   
+   <target name="all" depends="jar"/>
+</project>
