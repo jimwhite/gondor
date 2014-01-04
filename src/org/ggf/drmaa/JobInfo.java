@@ -153,7 +153,6 @@ public abstract interface JobInfo {
      * @see #getExitStatus()
      */
     public boolean hasExited() throws DrmaaException;
-    public boolean ifExited() throws DrmaaException;
 
     /**
      * If hasExited() returns true,  this function returns the exit code
@@ -197,7 +196,6 @@ public abstract interface JobInfo {
      * @see #getTerminatingSignal()
      */
     public boolean hasSignaled() throws DrmaaException;
-    public boolean ifSignaled() throws DrmaaException;
 
     /**
      * If hasSignaled() returns <CODE>true</CODE>, this method returns a
@@ -256,5 +254,4 @@ public abstract interface JobInfo {
      * </UL>
      */
     public boolean wasAborted() throws DrmaaException;
-    public boolean ifAborted() throws DrmaaException;
 }
