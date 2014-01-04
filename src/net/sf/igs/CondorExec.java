@@ -89,7 +89,7 @@ public class CondorExec {
 				throw new CondorExecException("Program " + program + " exited with value " + exitValue);
 			}
 		} catch (IOException ioe) {
-			throw new CondorExecException("I/O problem occurred when running condor_release.", ioe);
+			throw new CondorExecException("I/O problem occurred when running " + program + ".", ioe);
 		} catch (InterruptedException e) {
 			throw new CondorExecException("Interrupted", e);
 		}
