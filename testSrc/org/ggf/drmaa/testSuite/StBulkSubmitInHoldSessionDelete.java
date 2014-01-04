@@ -36,7 +36,7 @@ public class StBulkSubmitInHoldSessionDelete extends StBulkSubmitInHold
 			
 			for (int i=0;i<this.jobChunk;i++)
 			{
-				this.status = this.session.getJobStatus((String) this.ids.get(i));	
+				this.status = this.session.getJobProgramStatus((String) this.ids.get(i));
 				if (this.status!=Session.FAILED)
 				{
 					System.err.println("Test " + this.type + " failed");

@@ -41,7 +41,7 @@ public abstract class StSubmitInHold extends Test
 			this.id = this.session.runJob(this.jt);
 			System.out.println("Job successfully submitted ID: " + this.id);
 			
-			this.status = this.session.getJobStatus(this.id);
+			this.status = this.session.getJobProgramStatus(this.id);
 		}
 		catch (Exception e)
 		{

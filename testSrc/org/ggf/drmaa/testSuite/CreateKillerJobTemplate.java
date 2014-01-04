@@ -17,7 +17,8 @@
 
 package org.ggf.drmaa.testSuite;
 import org.ggf.drmaa.*;
-import java.util.*;
+
+import java.util.ArrayList;
 
 public class CreateKillerJobTemplate extends CreateJobTemplate
 {
@@ -56,9 +57,9 @@ public class CreateKillerJobTemplate extends CreateJobTemplate
 		args.add(this.signal);
 
 		this.jt.setArgs(args);
-			
-		this.jt.setOutputPath("stdout." + GridWaySession.GW_JOB_ID);
-		this.jt.setErrorPath("stderr." + GridWaySession.GW_JOB_ID);
+
+        this.jt.setOutputPath("stdout." + this.getClass().getName() /*SessionImpl.DRMAA_GW_JOB_ID*/);
+		this.jt.setErrorPath("stderr." + this.getClass().getName() /*SessionImpl.DRMAA_GW_JOB_ID*/);
 			
 		return this.jt;			
 	}

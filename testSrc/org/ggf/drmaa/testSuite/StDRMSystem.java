@@ -29,9 +29,9 @@ public class StDRMSystem extends StContactDRMDRMAA
 
 	public void run()
 	{
-		this.value = this.session.getDrmsInfo();
+		this.value = this.session.getDrmSystem();
 		this.runInit();
-		this.value = this.session.getDrmsInfo();
+		this.value = this.session.getDrmSystem();
 		this.runAfterInit();
 		System.out.println("Succesfully finished test "+ this.type);
 	}

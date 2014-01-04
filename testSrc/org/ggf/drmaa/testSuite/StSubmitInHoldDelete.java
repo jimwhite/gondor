@@ -41,7 +41,7 @@ public class StSubmitInHoldDelete extends StSubmitInHold
 			
 			this.session.control(this.id,Session.TERMINATE);
 						
-			this.status = this.session.getJobStatus(this.id);
+			this.status = this.session.getJobProgramStatus(this.id);
 			
 			if (this.status!=Session.FAILED)
 			{

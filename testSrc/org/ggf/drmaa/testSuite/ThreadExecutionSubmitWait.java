@@ -47,8 +47,8 @@ public class ThreadExecutionSubmitWait extends ThreadExecution
 			jt.setRemoteCommand(this.executable);
 			jt.setArgs(this.args);
 			
-			jt.setOutputPath("stdout." + GridWaySession.GW_JOB_ID);
-			jt.setErrorPath("stderr." + GridWaySession.GW_JOB_ID);
+			jt.setOutputPath("stdout." + this.getClass().getName() /*SessionImpl.DRMAA_GW_JOB_ID*/);
+			jt.setErrorPath("stderr." + this.getClass().getName() /*SessionImpl.DRMAA_GW_JOB_ID*/);
 			
 			for (int i=0;i<this.nJobs;i++)
 			{

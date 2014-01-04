@@ -1,5 +1,6 @@
 /* -------------------------------------------------------------------------- */
-/* Copyright 2002-2007 GridWay Team, Distributed Systems Architecture         */
+/* -------------------------------------------------------------------------- */
+/* Copyright 2002-2006 GridWay Team, Distributed Systems Architecture         */
 /* Group, Universidad Complutense de Madrid                                   */
 /*                                                                            */
 /* Licensed under the Apache License, Version 2.0 (the "License"); you may    */
@@ -17,7 +18,8 @@
 
 package org.ggf.drmaa.testSuite;
 import org.ggf.drmaa.*;
-import java.util.*;
+
+import java.util.ArrayList;
 
 public class CreateSleeperJobTemplate extends CreateJobTemplate
 {
@@ -55,15 +57,15 @@ public class CreateSleeperJobTemplate extends CreateJobTemplate
 		name = this.jt.getJobName();
 								
 		this.jt.setRemoteCommand(this.executable);
-		
+
 		ArrayList	args = new ArrayList();
-		
+
 		args.add(seconds);
-		
+
 		this.jt.setArgs(args);
-			
-		this.jt.setOutputPath("stdout." + GridWaySession.GW_JOB_ID);
-		this.jt.setErrorPath("stderr." + GridWaySession.GW_JOB_ID);
+
+		this.jt.setOutputPath("stdout." + this.getClass().getName() /*SessionImpl.DRMAA_GW_JOB_ID*/);
+		this.jt.setErrorPath("stderr." + this.getClass().getName() /*SessionImpl.DRMAA_GW_JOB_ID*/);
 			
 		if (this.hold)
 			jt.setJobSubmissionState(JobTemplate.HOLD_STATE);

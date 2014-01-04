@@ -51,7 +51,7 @@ public abstract class StBulkSubmitInHold extends Test
 			{
 				String id = (String) iter.next();
 				System.out.println("\t" + id);
-				this.status = this.session.getJobStatus(id);
+				this.status = this.session.getJobProgramStatus(id);
 				if (this.status!=Session.USER_ON_HOLD)
 				{
 					System.err.println("Job " + id + " is not in user hold state");

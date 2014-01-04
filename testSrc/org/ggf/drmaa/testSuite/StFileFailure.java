@@ -58,7 +58,7 @@ public abstract class StFileFailure extends Test
 			this.session.synchronize(Collections.singletonList(Session.JOB_IDS_SESSION_ALL),
 					    Session.TIMEOUT_WAIT_FOREVER, false);
 					    
-			if (this.session.getJobStatus(this.id) != Session.FAILED)
+			if (this.session.getJobProgramStatus(this.id) != Session.FAILED)
 			{
 				System.out.println("Test " + this.type +" failed");
 				return;

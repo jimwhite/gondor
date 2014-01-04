@@ -41,9 +41,9 @@ public class StSupportedAttr extends Test
             		this.jt = this.createJob.getJobTemplate();
 			
 			attributes =  this.jt.getAttributeNames();
-			
+
 			attrIterator = attributes.iterator();
-			
+
 			while(attrIterator.hasNext())
 			{
 				String	attr = (String) attrIterator.next();

@@ -39,15 +39,15 @@ public class TestDrmaa
 							  name.equals(Test.ST_EMPTY_SESSION_SYNCHRONIZE_DISPOSE)	||
 							  name.equals(Test.ST_EMPTY_SESSION_SYNCHRONIZE_NODISPOSE)	||
 							  name.equals(Test.ST_EMPTY_SESSION_CONTROL)))			||
-		args.length>2)					
+		args.length>2)
 		{
 			use.message();
 			return;
 		}
 		
-		
-		
-		if (args.length == 2) 
+
+
+		if (args.length == 2)
 			executable = args[1];
 		
 		if (name.equals(Test.ST_MULT_INIT)) //OK
@@ -102,7 +102,7 @@ public class TestDrmaa
 			testDrmaa = new StEmptySessionSynchronizeNoDispose();	
 		else if (name.equals(Test.ST_EMPTY_SESSION_CONTROL))//OK
 			testDrmaa = new StEmptySessionControl();
-		else if (name.equals(Test.ST_ATTRIBUTE_CHANGE))//KO
+		else if (name.equals(Test.ST_ATTRIBUTE_CHANGE))//OK
 			testDrmaa = new StAttributeChange();	
 		else if (name.equals(Test.ST_USAGE_CHECK))//OK
 			testDrmaa = new StUsageCheck(executable);	

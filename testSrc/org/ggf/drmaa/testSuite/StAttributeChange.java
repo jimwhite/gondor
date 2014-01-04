@@ -34,13 +34,13 @@ public class StAttributeChange extends Test
 		{
 		
 			Properties		job_env 	= new Properties();
-			Date				startTime ;
-			Calendar		calendar 	= Calendar.getInstance();
+			PartialTimestamp	startTime = new PartialTimestamp();
+			
 			
 			job_env.setProperty("job_env", "env1");
+			startTime.setModifier(Calendar.HOUR_OF_DAY, 11);
+			startTime.setModifier(Calendar.MINUTE, 11);
 			
-			calendar.set(1975, 11, 20);
-			startTime= calendar.getTime();
 			
 			this.session.init(null);
             		System.out.println("Session Init success");
@@ -55,10 +55,10 @@ public class StAttributeChange extends Test
 			
 			ArrayList  args = new ArrayList();
 			args.add("argv1");
-			
+
 			HashSet email = new HashSet();
 			email.add("email1");
-			
+
 			this.jt.setRemoteCommand("job1");
 			this.jt.setArgs(args);
 			this.jt.setJobSubmissionState(JobTemplate.HOLD_STATE);
@@ -83,19 +83,17 @@ public class StAttributeChange extends Test
 			job_env.setProperty("job_env5", "env7");
 			job_env.setProperty("job_env10", "env10");
 			job_env.setProperty("job_env99", "env99");
-			
-			
-			calendar.set(1978, 12, 6);
-			startTime = calendar.getTime();
-			
-			args = new ArrayList();
-			args.add("argv2");
-			
-			email = new HashSet();
-			email.add("email2");
-			
-			
-			this.jt.setRemoteCommand("job2");
+
+			startTime.setModifier(Calendar.HOUR_OF_DAY, 11);
+			startTime.setModifier(Calendar.MINUTE, 22);
+
+            args = new ArrayList();
+            args.add("argv2");
+
+            email = new HashSet();
+            email.add("email2");
+
+            this.jt.setRemoteCommand("job2");
 			this.jt.setArgs(args);
 			this.jt.setJobSubmissionState(JobTemplate.ACTIVE_STATE);
 			this.jt.setJobEnvironment(job_env);
@@ -115,26 +113,19 @@ public class StAttributeChange extends Test
 			
 			this.session.runJob(jt);
 			
-		
 			if (this.jt.getArgs().size() != 1)
 				System.out.println("getArgs failed. The legnth of the arguments is no correct");
 			else if (!this.jt.getArgs().get(0).equals("argv2"))
 				System.out.println("Incorrect value after change for args attribute");
-			else if (!((String) this.jt.getJobEnvironment().get("job_env")).equals("env2"))
+			else if (!this.jt.getJobEnvironment().get("job_env").equals("env2"))
 				System.out.println("Incorrect value after change for jobEnvironment attribute");
 			else if (this.jt.getEmail().size() !=1)
 				System.out.println("getEmail failed. The length of the arguments is no correct");
-			else if (this.jt.getEmail().iterator()!=null)
-			{
-				Iterator it = this.jt.getEmail().iterator();
-				String value = (String) it.next();
-				
-				if (value != null && value.equals("email2"))
-					System.out.println("Incorrect value after change for email attribute");
-			}
+			else if (!this.jt.getEmail().toArray()[0].equals("email2"))
+				System.out.println("Incorrect value after change for email attribute");
 			else if (!this.jt.getRemoteCommand().equals("job2"))
 				System.out.println("Incorrect value after change for remoteCommand attribute");
-			else if (this.jt.getJobSubmissionState()!=JobTemplate.ACTIVE_STATE)
+			else if (this.jt.getJobSubmissionState() != JobTemplate.ACTIVE_STATE)
 				System.out.println("Incorrect value after change for jobSubmissionState attribute");
 			else if (!this.jt.getWorkingDirectory().equals("/tmp2"))
 				System.out.println("Incorrect value after change for workingDirectory attribute");
@@ -144,8 +135,9 @@ public class StAttributeChange extends Test
 				System.out.println("Incorrect value after change for nativeSpecification attribute");
 			else if (this.jt.getBlockEmail())
 				System.out.println("Incorrect value after change for blockEmail attribute");
-			else if (this.jt.getStartTime().compareTo(calendar.getTime())!=0)
-				System.out.println("Incorrect value after change for startTime attribute");	
+			else if (this.jt.getStartTime().getModifier(Calendar.HOUR_OF_DAY)!=11 &&
+				 this.jt.getStartTime().getModifier(Calendar.HOUR_OF_DAY)!=22)
+				System.out.println("Incorrect value after change for startTime attribute");
 			else if (!this.jt.getJobName().equals("jobName2"))
 				System.out.println("Incorrect value after change for jobName attribute");
 			else if (!this.jt.getInputPath().equals(":/dev/null2"))

@@ -44,7 +44,7 @@ public class StSubmitInHoldRelease extends StSubmitInHold
 			this.session.synchronize(Collections.singletonList(Session.JOB_IDS_SESSION_ALL),
 					    	 Session.TIMEOUT_WAIT_FOREVER, false);
 			
-			this.status = this.session.getJobStatus(this.id);
+			this.status = this.session.getJobProgramStatus(this.id);
 			
 			if (this.status!=Session.DONE)
 			{

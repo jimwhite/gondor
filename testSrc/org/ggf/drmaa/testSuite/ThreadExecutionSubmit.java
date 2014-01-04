@@ -72,17 +72,14 @@ public class ThreadExecutionSubmit extends ThreadExecution
 			jt.setRemoteCommand(this.executable);
 			jt.setArgs(this.args);
 			
-			jt.setOutputPath("stdout." + GridWaySession.GW_JOB_ID);
-			jt.setErrorPath("stderr." + GridWaySession.GW_JOB_ID);
+			jt.setOutputPath("stdout." + this.getClass().getName() /*Session.DRMAA_GW_JOB_ID*/);
+			jt.setErrorPath("stderr." + this.getClass().getName() /*Session.DRMAA_GW_JOB_ID*/);
 			
 			for (int i=0;i<this.nJobs;i++)
 			{
-				if (jt!=null)
-				{
-					String id = this.session.runJob(jt);
-					System.out.println("Job successfully submitted ID: " + id);
-				}
-			}
+                String id = this.session.runJob(jt);
+                System.out.println("Job successfully submitted ID: " + id);
+            }
 		}
 		catch (Exception e)
 		{

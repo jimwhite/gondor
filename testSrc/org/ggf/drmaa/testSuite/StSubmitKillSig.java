@@ -18,7 +18,6 @@
 package org.ggf.drmaa.testSuite;
 import org.ggf.drmaa.*;
 
-
 public class StSubmitKillSig extends Test 
 {
 	private static final String[] signals	={"SIGUSR1", "SIGTERM", "SIGALARM", "SIGUSR2",

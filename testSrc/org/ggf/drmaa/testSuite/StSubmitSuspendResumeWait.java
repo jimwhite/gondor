@@ -44,7 +44,7 @@ public class StSubmitSuspendResumeWait extends Test
 						
 			do
 			{
-				status = this.session.getJobStatus(this.id);
+				status = this.session.getJobProgramStatus(this.id);
 				
 				if (status!=Session.RUNNING)
 					Thread.sleep(5000);
@@ -56,7 +56,7 @@ public class StSubmitSuspendResumeWait extends Test
 			
 			System.out.println ("Suspended job " + this.id);
 			
-			status = this.session.getJobStatus(this.id);
+			status = this.session.getJobProgramStatus(this.id);
 				
 			if (status!=Session.USER_SUSPENDED)
 			{
@@ -75,7 +75,7 @@ public class StSubmitSuspendResumeWait extends Test
 			
 			Thread.sleep(10000);
 						
-			status = this.session.getJobStatus(this.id);
+			status = this.session.getJobProgramStatus(this.id);
 			
 			
 			if (status!=Session.RUNNING && status!=Session.FAILED && status!=Session.QUEUED_ACTIVE)
