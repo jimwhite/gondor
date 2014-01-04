@@ -280,6 +280,12 @@ public class SessionImpl implements Session {
      * @throws DrmaaException {@inheritDoc}
      */
     public JobTemplate createJobTemplate() throws DrmaaException {
+        // Check that we have an active session. You can't do this operation unless
+        // we are in an active session...
+        if (! activeSession) {
+            throw new NoActiveSessionException();
+        }
+
         File jtFile = getJobTemplateFile(jobTemplateId);
         try {
 			jtFile.createNewFile();
@@ -588,7 +594,7 @@ public class SessionImpl implements Session {
 			// We try to adhere to the "new" way of specifying the arguments
 			// as explained in the 'condor_submit' man page.
 			if (job.getArgs() != null && job.getArgs().size() > 0) {
-				StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
 				sb.append("\"");
 				char tick = '\'';
 				Iterator<String> iter = job.getArgs().iterator();
@@ -1004,9 +1010,7 @@ public class SessionImpl implements Session {
 		    info = logParser.parse();
 		    if (info.hasExited()) {
 		    	done = true;
-		    }
-		    
-		    if (! done && timeout == Session.TIMEOUT_WAIT_FOREVER) {
+		    } else if (timeout != Session.TIMEOUT_WAIT_FOREVER) {
 		        long now = System.currentTimeMillis() / 1000;
 		        if ((now - start) >= timeout) {
 		        	// We've reached the timeout
