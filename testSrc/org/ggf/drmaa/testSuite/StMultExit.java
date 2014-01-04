@@ -29,7 +29,7 @@ public class StMultExit extends Test
 	{
 		try
 		{
-			this.session.init(null);
+			this.session.init(contact);
             		System.out.println("Session Init success");
 
             		this.session.exit();

@@ -30,8 +30,8 @@ public class MtExitDuringSubmitOrWait extends Mt
 	{
 		try
 		{
-			this.session.init(null);
-            		System.out.println("Session Init success");
+			this.session.init(contact);
+            System.out.println("Session Init success");
 
 			for (int i=0; i<this.nThreads;i++)
 			{

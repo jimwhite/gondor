@@ -30,8 +30,8 @@ public class StEmptySessionSynchronizeNoDispose extends Test
 	{
 		try
 		{
-			this.session.init(null);
-            		System.out.println("Session Init success");
+			this.session.init(contact);
+            System.out.println("Session Init success");
 			
 			this.session.synchronize(Collections.singletonList(Session.JOB_IDS_SESSION_ALL),
 					    Session.TIMEOUT_WAIT_FOREVER, false);

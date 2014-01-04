@@ -30,7 +30,7 @@ public class StEmptySessionWait extends Test
 	{
 		try
 		{
-			this.session.init(null);
+			this.session.init(contact);
             		System.out.println("Session Init success");
 			
 			this.session.wait(Session.JOB_IDS_SESSION_ANY, Session.TIMEOUT_WAIT_FOREVER);

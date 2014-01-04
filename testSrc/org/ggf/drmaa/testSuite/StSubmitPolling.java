@@ -34,10 +34,10 @@ public abstract class StSubmitPolling extends Test
 		
 		try
 		{
-			this.session.init(null);
-            		System.out.println("Session Init success");
+			this.session.init(contact);
+            System.out.println("Session Init success");
 
-            		this.jt = this.createJob.getJobTemplate();
+            this.jt = this.createJob.getJobTemplate();
 			
 			this.id = this.session.runJob(this.jt);
 			System.out.println("Job successfully submitted ID: " + this.id);

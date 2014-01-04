@@ -30,8 +30,8 @@ public class StEmptySessionControl extends Test
 	{
 		try
 		{
-			this.session.init(null);
-            		System.out.println("Session Init success");
+			this.session.init(contact);
+            System.out.println("Session Init success");
 			
 			System.out.println(this.type + ": SUSPEND signal testing...");
 			

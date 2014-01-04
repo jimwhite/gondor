@@ -29,13 +29,13 @@ public class StMultInit extends Test
 	{
 		try
 		{
-			this.session.init(null);
-            		System.out.println("Session Init success");
+			this.session.init(contact);
+            System.out.println("Session Init success");
 
-            		this.session.init(null);
-            		System.out.println("Session Init success");
-            
-            		System.out.println("drmaa_init() failed: Test " + this.type + " failed");            		
+            this.session.init(contact);
+            System.out.println("Session Init success");
+
+            System.out.println("drmaa_init() failed: Test " + this.type + " failed");
 			this.session.exit();
 
 		}

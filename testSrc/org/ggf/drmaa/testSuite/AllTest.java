@@ -28,14 +28,14 @@ public class AllTest extends Test
 	
 	public AllTest(String exec1)
 	{
-		this.type = this.ALL_TEST;
+		super(ALL_TEST);
 		this.exec1 = exec1;
 	}
 
 	
 	public AllTest(String exec1, String exec2, String exec3)
 	{
-		this.type = this.ALL_TEST;
+        super(ALL_TEST);
 		this.exec1 = exec1;
 		this.exec2 = exec2;
 		this.exec3 = exec3;

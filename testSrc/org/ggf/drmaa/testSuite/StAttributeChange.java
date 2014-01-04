@@ -42,8 +42,8 @@ public class StAttributeChange extends Test
 			startTime.setModifier(Calendar.MINUTE, 11);
 			
 			
-			this.session.init(null);
-            		System.out.println("Session Init success");
+			this.session.init(contact);
+            System.out.println("Session Init success");
 			
 			System.out.println("Testing change of job template attributes");
 			System.out.println("Getting job template");

@@ -66,7 +66,9 @@ public abstract class Test
 	public static final java.lang.String ST_UNSUPPORTED_ATTR 			= "ST_UNSUPPORTED_ATTR";
 	public static final java.lang.String ST_UNSUPPORTED_VATTR 			= "ST_UNSUPPORTED_VATTR";
 	public static final java.lang.String ST_SUBMIT_KILL_SIG 			= "ST_SUBMIT_KILL_SIG";
-	
+
+    final protected String      contact;
+
 	protected String			type;
 	protected String 			id;
 	protected SessionFactory  		factory = SessionFactory.getFactory();
@@ -78,20 +80,19 @@ public abstract class Test
 	protected boolean			stateAllTest = true;
 	protected String			executable;
 
-	
-	Test(){}
+	private Test() { contact = null ;  }
 	
 	Test(String type)
 	{
+        contact = "gridway_drmaa_test-" + type;
 		this.type = type;
 		System.out.println("TEST: " + this.type);
 	}
 	
 	Test(String executable, String type)
 	{
+        this(type);
 		this.executable = executable;
-		this.type = type;
-		System.out.println("TEST: " + this.type);
 	}
 	
 	public abstract void run();

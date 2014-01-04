@@ -32,7 +32,7 @@ public abstract class StFileFailure extends Test
 		
 		try
 		{
-			this.session.init(null);
+			this.session.init(contact);
             		System.out.println("Session Init success");
 
             		this.jt = this.createJob.getJobTemplate();

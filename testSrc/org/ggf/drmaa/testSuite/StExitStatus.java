@@ -31,7 +31,7 @@ public class StExitStatus extends Test
 	{
 		try
 		{
-			this.session.init(null);
+			this.session.init(contact);
 			System.out.println("Session Init success");
 			for (int i=0; i<255;i++)
 			{

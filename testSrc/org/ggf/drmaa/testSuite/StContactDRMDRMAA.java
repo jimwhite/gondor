@@ -34,7 +34,7 @@ public abstract class StContactDRMDRMAA extends Test
 		try
 		{
 			System.out.println(this.method + "returned " + this.value + " before init");
-			this.session.init(null);
+			this.session.init(contact);
 		}
 		catch (DrmaaException e)
 		{
