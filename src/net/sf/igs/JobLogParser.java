@@ -71,6 +71,8 @@ public class JobLogParser {
 		if (! Util.validJobId(jobId)) {
 			throw new InvalidJobException("Invalid job id: " + jobId);
 		}
+        //TODO: We don't parse this from the log currently, but at least remember what it should be.
+        this.jobId = jobId;
 		String log = Util.getLogFromId(jobId);
 		File logFile = new File(log);
 		
