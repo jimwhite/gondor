@@ -58,7 +58,8 @@ public class DelayedStartTest {
 			// our test will take forever to run... How about 3 minutes?
 			PartialTimestamp now = getCurrentPartialTimestamp();
 			long nowMillis = now.getTimeInMillis();
-			long startMillis = nowMillis + (3 * 60 * 1000);
+            final int delayMinutes = 3;
+            long startMillis = nowMillis + (delayMinutes * 60 * 1000);
 			PartialTimestamp startTime = new PartialTimestamp();
 			startTime.setTimeInMillis(startMillis);
 			
@@ -77,8 +78,14 @@ public class DelayedStartTest {
 			assertFalse(released);
 			
 			boolean releasedAfterStartTime = false;
-			byte minutesLooped = 0;
-			byte maxMinutes = 6; // The maximum number of minutes to wait...
+			int minutesLooped = 0;
+            // Condor can take up to 5 minutes to update negotiator stats
+            // so even though negotiation happens every minute
+            // we should always wait at least that long for a job to get started.
+            // https://www-auth.cs.wisc.edu/lists/htcondor-users/2004-September/msg00029.shtml
+            // "Default NEGOTIATOR_UPDATE_INTERVAL versus NEGOTIATOR_INTERVAL plus NEGOTIATION_CYCLE_STATS_LENGTH"
+            // https://bugzilla.redhat.com/show_bug.cgi?id=673538
+			final int maxMinutes = 5 + (delayMinutes * 3); // The maximum number of minutes to wait...
 			
 			while (minutesLooped < maxMinutes) {
 				// Sleep for a minute
