@@ -170,7 +170,7 @@ public class FileTransferMode implements Serializable, Cloneable {
      * @return a string containing the stream settings
      */
     public String toString() {
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         boolean firstProperty = true;
         
         if (inputStream) {

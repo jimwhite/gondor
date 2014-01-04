@@ -699,7 +699,7 @@ public class JobTemplateImpl implements JobTemplate {
      * @see #setErrorPath(String)
      */
     public void setTransferFiles(FileTransferMode mode) throws DrmaaException {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         
         if (mode.getInputStream()) {
             buf.append('i');

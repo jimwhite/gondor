@@ -493,7 +493,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
         if (modified) {
             boolean error = false;
             boolean firstProperty = true;
-            StringBuffer out = new StringBuffer();
+            StringBuilder out = new StringBuilder();
 
             List args = null;
             
