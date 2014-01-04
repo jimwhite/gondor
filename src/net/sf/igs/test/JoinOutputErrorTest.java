@@ -22,10 +22,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +47,7 @@ public class JoinOutputErrorTest {
 	private static String name = JoinOutputErrorTest.class.getSimpleName();
 	private static File combinedFile, errorFile = null;
 	private static String combinedPath, errorPath;
-	private static String script = null;
+	private static File scriptFile = null;
 	
 	/**
 	 * Establish that files/scripts are not around from previous invocations. Copy
@@ -64,7 +67,7 @@ public class JoinOutputErrorTest {
 		errorFile = new File(errorPath);
 		
 		String scriptBasename = "out_and_err.pl";
-		script = System.getProperty("user.home") + File.separator + scriptBasename;
+		scriptFile = new File(System.getProperty("user.home"), scriptBasename);
 		
 		// Ensure we don't have files around from previous tests
 		deleteFiles();
@@ -75,11 +78,9 @@ public class JoinOutputErrorTest {
 	}
 
 	// Need a way to copy files without polluting the test code. Here's a private method.
-	private static void copyFile(String source, String destination) throws IOException {
-		File inFile = new File(source);
-		File outFile = new File(destination);
-		FileReader in = new FileReader(inFile);
-		FileWriter out = new FileWriter(outFile);
+	private static void copyFile(File inFile, File outFile) throws IOException {
+		Reader in = new BufferedReader(new FileReader(inFile));
+		Writer out = new BufferedWriter(new FileWriter(outFile));
 		int c;
 		while ((c = in.read()) != -1) {
 			out.write(c);
@@ -105,21 +106,10 @@ public class JoinOutputErrorTest {
 		
 		File distScript = new File(testDataDir, basename);
 		if (distScript.exists()) {
-			try {
 				// Copy the file to the user's home directory
-				copyFile(distScript.getAbsolutePath(), script);
+				copyFile(distScript, scriptFile);
 				
-				// Well, this only works on Linux/Unix...
-				Process process =  Runtime.getRuntime().exec("chmod 755 " + script);
-				process.waitFor();
-				
-				// Make sure we got a good exit value.
-				if (process.exitValue() != 0) {
-					throw new RuntimeException("Unable to grant execute permissions to " + script);
-				}
-			} catch (InterruptedException e) {
-				fail("Test interrupted.");
-			}
+                scriptFile.setExecutable(true);
 		} else {
 			throw new RuntimeException("Unable to find " + basename);
 		}
@@ -129,13 +119,12 @@ public class JoinOutputErrorTest {
 	// leave the directory polluted with stuff.
 	private static void deleteFiles() {
 		// Delete the file if it's there (could be a leftover from previous tests)
-		if (combinedFile.exists()) {
+		if (combinedFile != null && combinedFile.exists()) {
 			combinedFile.delete();	
 		}
-		if (errorFile.exists()) {
+		if (errorFile != null && errorFile.exists()) {
 			errorFile.delete();
 		}
-		File scriptFile = new File(script);
 		if (scriptFile != null && scriptFile.exists()) {
 			scriptFile.delete();
 		}
@@ -166,7 +155,7 @@ public class JoinOutputErrorTest {
 			
 			// Set the remote command to be the script that we have copied from
 			// the distribution's test directory to the user's home directory.
-			jt.setRemoteCommand(script);
+			jt.setRemoteCommand(scriptFile.getPath());
 			jt.setArgs(args);
 			
 			// Set the job name
@@ -185,7 +174,7 @@ public class JoinOutputErrorTest {
 			assertFalse(errorFile.exists());
 			
 			// Make sure we do have the script to run
-			assertTrue(new File(script).exists());
+			assertTrue(scriptFile.exists());
 			
 			// Start the job
 			String jobId = session.runJob(jt);
