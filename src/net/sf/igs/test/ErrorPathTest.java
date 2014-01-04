@@ -79,9 +79,9 @@ public class ErrorPathTest {
 			session.init(ErrorPathTest.class.getSimpleName());
 			JobTemplate jt = session.createJobTemplate();
 
-			String badArgument = "abcdefg";
+			String badArgument = "-Z";
 			
-			jt.setRemoteCommand("/bin/sleep");
+			jt.setRemoteCommand("/bin/cp");
 			jt.setArgs(Collections.singletonList(badArgument));
 			
 			// Set the job name
@@ -116,7 +116,7 @@ public class ErrorPathTest {
 			String line = null;
 			
 			while ((line = reader.readLine()) != null) {
-				if (line.contains(badArgument)) {
+				if (line.contains("illegal option")) {
 					correctFailure = true;
 					break;
 				}
