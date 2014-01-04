@@ -120,7 +120,7 @@ public class ArrayJobTest {
 			session.synchronize(jobIds, Session.TIMEOUT_WAIT_FOREVER, true);
 			
 			// Okay, all the jobs completed. Let's double check that.
-			boolean filesPresent = false;
+			boolean filesPresent = true;
 			for (int jobIndex = 0; jobIndex < jobCount; jobIndex++) {
 				String jobFilePath = filePathBase + "." + jobIndex;
 				File jobFile = new File(jobFilePath);
