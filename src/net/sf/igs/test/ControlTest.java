@@ -290,8 +290,8 @@ public class ControlTest {
 			
 			// Might take a little while for the job to return to a running state.
 			boolean running = false;
-			int maxAttempts = 10;
-			for (int count = 1; count <= maxAttempts; count++) {
+			final int maxAttempts = 10;
+			for (int count = 1; !running && count <= maxAttempts; count++) {
 				// Verify that the job is now running
 				running = TestUtils.isJobRunning(jobId);
 				if (running) {
@@ -346,7 +346,7 @@ public class ControlTest {
 			
 			// Might take a little while for the job to return to a running state.
 			boolean running = false;
-			for (int count = 1; count <= 10; count++) {
+			for (int count = 1; !running && count <= 10; count++) {
 				// Verify that the job is now running
 				running = TestUtils.isJobRunning(jobId);
 				if (running) {
@@ -481,7 +481,7 @@ public class ControlTest {
 			
 			// Verify that all these jobs are held
 			boolean allHeld = true;
-			int maxAttempts = 10;
+			final int maxAttempts = 10;
 			for (int attempt = 1; attempt <= maxAttempts; attempt++) {
 				for (String jobId : jobIds) {
 					boolean held = TestUtils.isJobHeld(jobId);
