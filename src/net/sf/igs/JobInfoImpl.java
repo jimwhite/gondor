@@ -71,13 +71,28 @@ public class JobInfoImpl implements JobInfo {
     public boolean hasExited() {
         return ((status & EXITED_BIT) != 0);
     }
-    
+
+    @Override
+    public final boolean ifExited() throws DrmaaException {
+        return hasExited();
+    }
+
     public boolean hasSignaled() {
         return ((status & SIGNALED_BIT) != 0);
     }
-    
+
+    @Override
+    public final boolean ifSignaled() throws DrmaaException {
+        return hasSignaled();
+    }
+
     public boolean wasAborted() {
         return ((status & NEVERRAN_BIT) != 0);
+    }
+
+    @Override
+    public final boolean ifAborted() throws DrmaaException {
+        return wasAborted();
     }
 
     public String getJobId() {

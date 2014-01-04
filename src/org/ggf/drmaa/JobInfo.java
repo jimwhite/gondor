@@ -153,7 +153,8 @@ public abstract interface JobInfo {
      * @see #getExitStatus()
      */
     public boolean hasExited() throws DrmaaException;
-    
+    public boolean ifExited() throws DrmaaException;
+
     /**
      * If hasExited() returns true,  this function returns the exit code
      * that the job passed to _exit() (see exit(2)) or exit(3C)), or the value
@@ -196,7 +197,8 @@ public abstract interface JobInfo {
      * @see #getTerminatingSignal()
      */
     public boolean hasSignaled() throws DrmaaException;
-    
+    public boolean ifSignaled() throws DrmaaException;
+
     /**
      * If hasSignaled() returns <CODE>true</CODE>, this method returns a
      * representation of the signal that caused the termination of the job. For
@@ -254,4 +256,5 @@ public abstract interface JobInfo {
      * </UL>
      */
     public boolean wasAborted() throws DrmaaException;
+    public boolean ifAborted() throws DrmaaException;
 }

@@ -63,7 +63,8 @@ public class SessionImpl implements Session {
 	
     private static final String SUBMIT_FILE_PREFIX = "condor_drmaa_";
 	private static final String DRM_SYSTEM = "Condor";
-	private String contact = "";
+    private static final String CONDOR_JDRMAA_DEFAULT_CONTACT = "condor_drmaa_default_contact";
+    private String contact = "";
     private boolean activeSession = false;
     private File sessionDir = null;
     private int jobTemplateId = 1;
@@ -369,7 +370,8 @@ public class SessionImpl implements Session {
      */
     public void init(String contact) throws DrmaaException {
     	if (contact == null || contact.length() == 0) {
-    		throw new InvalidContactStringException();
+            //    		throw new InvalidContactStringException();
+            contact = CONDOR_JDRMAA_DEFAULT_CONTACT;
     	}
     	
     	// Check that we actually have Condor installed.
@@ -379,7 +381,7 @@ public class SessionImpl implements Session {
     	}
 
         // Make the directory for the session
-        String topDir = Util.TMP + File.separator + "condor-jdrmaa-" + System.getProperty("user.name");
+        File topDir = new File(Util.TMP,  SUBMIT_FILE_PREFIX + System.getProperty("user.name"));
 
     	synchronized (contact) {
         	if (activeSession) {
