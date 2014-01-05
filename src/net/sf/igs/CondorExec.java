@@ -117,44 +117,8 @@ public class CondorExec {
 	 * @throws CondorExecException
 	 * @see "The 'condor_submit' man page"
 	 */
-	public static String submit(String submitPath) throws CondorExecException {    	
-    	String jobID = null;
-    	
-    	try {
-        	String[] command = {"condor_submit", submitPath};
-        	Process process = Runtime.getRuntime().exec(command);
-			process.waitFor();
-			int exitValue = process.exitValue();
-			
-			if (exitValue == 0) {
-				// The condor_submit command succeeded. It ran and exited 0...
-		    	Reader reader = new InputStreamReader(process.getInputStream());
-		    	BufferedReader bufReader = new BufferedReader(reader);
-		    	String line = null;
-		    	
-		    	// Read through the output
-		    	while ( (line = bufReader.readLine()) != null ) {
-		    		if (line.contains("submitted to cluster")) {
-		    			Pattern pattern = Pattern.compile("\\d+\\.$");
-		    			Matcher matcher = pattern.matcher(line);
-		    			if (matcher.find()) {
-		    				jobID = matcher.group();
-		    				jobID = jobID + "0";
-		    			}
-		    		}
-		    	}
-		    	bufReader.close();
-			} else {
-				// The condor_submit invocation failed.
-				throw new InternalException("condor_submit failed. Exit value: " + exitValue);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			// Wrap the exception that we got.
-			throw new CondorExecException(e.getMessage(), e);
-		}
-
-		return jobID;
+	public static String submit(String submitPath) throws CondorExecException {
+        return submit(new File(submitPath));
 	}
 	
 	/**
@@ -167,10 +131,52 @@ public class CondorExec {
 	 * @see "The 'condor_submit' man page"
 	 */
 	public static String submit(File submitFile) throws CondorExecException {
-		if (submitFile.exists() && submitFile.isFile() && submitFile.canRead()) {
-			return submit(submitFile.getAbsolutePath());
-		} else {
-			throw new IllegalArgumentException("Submit file doesn't exist or isn't a readable file.");
-		}
+        String jobID = null;
+
+/*
+        if (!(submitFile.exists() && submitFile.isFile() && submitFile.canRead() && submitFile.length() > 0)) {
+            return null;
+        }
+*/
+
+        try {
+            String[] command = {"condor_submit", submitFile.getAbsolutePath()};
+            Process process = Runtime.getRuntime().exec(command);
+            process.waitFor();
+            int exitValue = process.exitValue();
+
+            if (exitValue == 0) {
+                // The condor_submit command succeeded. It ran and exited 0...
+                Reader reader = new InputStreamReader(process.getInputStream());
+                BufferedReader bufReader = new BufferedReader(reader);
+                String line = null;
+
+                // Read through the output
+                while ( (line = bufReader.readLine()) != null ) {
+                    if (line.contains("submitted to cluster")) {
+                        Pattern pattern = Pattern.compile("\\d+\\.$");
+                        Matcher matcher = pattern.matcher(line);
+                        if (matcher.find()) {
+                            jobID = matcher.group();
+                            jobID = jobID + "0";
+                        }
+                    }
+                }
+                bufReader.close();
+            } else {
+                // The condor_submit invocation failed.
+                //TODO: Gridway tests (like ST_OUTPUT_FILE_FAILURE) expect a Session.getJobProgramStatus
+                // of Session.FAILED for this situation, but we can't easily do that here.
+                // Probably the thing to do is use special JobIds that encode these states
+                // and then decode them in getJobProgramStatus.
+                throw new InternalException("condor_submit failed. Exit value: " + exitValue);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Wrap the exception that we got.
+            throw new CondorExecException(e.getMessage(), e);
+        }
+
+        return jobID;
 	}
 }

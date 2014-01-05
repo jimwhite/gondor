@@ -71,6 +71,7 @@ public class SessionImpl implements Session {
     
     // Sleep period is in seconds
     private static final int SLEEP_PERIOD = 5;
+    private static final long SLEEP_PERIOD_MILLIS = SLEEP_PERIOD * 1000L;
     
     /**
      * Creates a new instance of SessionImpl
@@ -271,6 +272,7 @@ public class SessionImpl implements Session {
     	if (true) {
     		throw new RuntimeException("Not yet implemented.");
     	}
+
         return 0;
     }
     
@@ -305,7 +307,7 @@ public class SessionImpl implements Session {
      * TODO: Complete some documentation here.
      */
     private File getJobTemplateFile(int templateId) {
-        File jtFile = new File(sessionDir, jobTemplateId + "");
+        File jtFile = new File(sessionDir, "" + jobTemplateId);
         return jtFile;
     }
     
@@ -792,8 +794,8 @@ public class SessionImpl implements Session {
      */
     private String submit(File submitFile) throws Exception {
     	// Before we do anything, check that the submit file actually exists and is
-    	// readable. Otherwise, we can't submit anything can we?
-    	if (! (submitFile.exists() && submitFile.isFile() && submitFile.canRead())) {
+    	// readable and contains something. Otherwise, we can't submit anything can we?
+    	if (! (submitFile.exists() && submitFile.isFile() && submitFile.canRead() && submitFile.length() > 0)) {
     		throw new IllegalArgumentException("Submit file does not exist or isn't readable.");
     	}
     	
@@ -953,49 +955,91 @@ public class SessionImpl implements Session {
     public JobInfo wait(String jobId, long timeout) throws DrmaaException {
     	// Make sure we have a good timeout, but check that it's not one of the
     	// predefined values.
-    	if (timeout <= 0 && timeout != Session.TIMEOUT_WAIT_FOREVER && timeout != Session.TIMEOUT_NO_WAIT) {
+    	if (timeout < 0 && timeout != Session.TIMEOUT_WAIT_FOREVER) {
     		throw new IllegalArgumentException("Must have a positive timeout.");
     	}
-    	
 
-        // Check if we have a valid job ID
-        if (! (Util.validJobId(jobId) || jobId.equals(Session.JOB_IDS_SESSION_ANY))) {
-        	throw new InvalidJobException();
-        }
-        
+/*
         // Check if we have a bad timeout value
         if (timeout < 0 && timeout != SessionImpl.TIMEOUT_WAIT_FOREVER) {
-        	throw new IllegalArgumentException("Illegal timeout value.");
+            throw new IllegalArgumentException("Illegal timeout value.");
         }
-        
-        if (jobId.equals(SessionImpl.JOB_IDS_SESSION_ANY)) {
+*/
+
+        long start = 0;
+
+        pick_a_jobId :
+        while (jobId.equals(SessionImpl.JOB_IDS_SESSION_ANY)) {
         	File[] files = sessionDir.listFiles();
-        	if (files.length > 0) {
+        	if (files.length < 1) {
+                // There are no job template files (yet).
+                // Not sure whether we should quit right away, but since we've
+                // got this time out loop we'll give them a second chance.
+                if (start != 0) {
+                    // We've looked twice for template files and find none.
+                    throw new InvalidJobException();
+                }
+            } else {
         		// TODO: Pick a file at random instead of just the first
-        		File toWaitFor = files[0];
-        		try {
-					BufferedReader buf = new BufferedReader(new FileReader(toWaitFor));
-					jobId = buf.readLine().trim();
-				} catch (Exception e) {
-					throw new InternalException("Unable to read file " + toWaitFor.getAbsolutePath());
-				}
+        		for (File toWaitFor : files) {
+                    try {
+                        if (toWaitFor.length() > 0 && toWaitFor.canRead() && toWaitFor.isFile()) {
+                            BufferedReader buf = new BufferedReader(new FileReader(toWaitFor));
+                            //TODO: Is the writing locked?  How can we be sure we get it all?
+                            // Should we be looking for the EOL?
+                            String line = buf.readLine();
+                            if (line != null) {
+                                line = line.trim();
+                                if (line.length() > 0) {
+                                    jobId = line;
+                                    break pick_a_jobId;
+                                }
+                            }
+                        }
+                    } catch (IOException e) {
+//                        throw new InternalException("Unable to read file " + toWaitFor.getAbsolutePath());
+                    }
+                }
         	}
+
+            // Didn't get a jobId from any of those files (if there were any).
+            // Wait a while if they are willing to before trying again.
+            if (timeout > 0 || timeout == Session.TIMEOUT_WAIT_FOREVER) {
+                if (start == 0) {
+                    // We've just checked once.
+                    // Set the start time now so that TIMEOUT_WAIT_FOREVER can
+                    // look at it and can quit if there are no job files on the second try.
+                    start = System.currentTimeMillis();
+                } else {
+                    if (timeout > 0) {
+                        if ((System.currentTimeMillis() - start) >= timeout * 1000) {
+                            throw new InternalException("Timed out trying to read a jobId from sessionDir files.");
+                        }
+                    }
+                }
+
+                try {
+                    Thread.sleep(SLEEP_PERIOD_MILLIS);
+                } catch (InterruptedException e) {
+                    throw new InternalException(e.getMessage());
+                }
+            }
         }
-        
-        JobInfo info = null;
+
+        // Check if we have a valid job ID
+        if (! (Util.validJobId(jobId))) {
+            throw new InvalidJobException();
+        }
+
     	try {
             JobLogParser logParser = new JobLogParser(jobId);
-			info = logParser.parse();
-	    	// Only go into a monitoring loop if we have a bonafide timeout
-	        if (timeout != Session.TIMEOUT_NO_WAIT) {
-	            info = monitor(logParser, timeout);
-	        }
+            JobInfo info = monitor(logParser, timeout);
+
+            return info;
 		} catch (Exception ioe) {
 			ioe.printStackTrace();
 			throw new InternalException(ioe.getMessage());
 		}
-    	
-        return info;
     }
 
     /*
@@ -1004,32 +1048,33 @@ public class SessionImpl implements Session {
 	private JobInfo monitor(JobLogParser logParser, long timeout) throws Exception {
     	// Get the current number of seconds since the epoch. We'll refer
     	// to this to make sure we stop waiting if we reach the timeout...
-    	long start = System.currentTimeMillis() / 1000;
-        
-		boolean done = false;
-		JobInfo info = null;
+    	final long start = System.currentTimeMillis() / 1000;
+
+        JobInfo info = null;
+
 		// Start monitoring
-		while (! done) {
+		while (true) {
 		    info = logParser.parse();
-		    if (info.hasExited()) {
-		    	done = true;
-		    } else if (timeout != Session.TIMEOUT_WAIT_FOREVER) {
+		    if (info.hasExited() || timeout == Session.TIMEOUT_NO_WAIT) {
+		    	break;
+		    }
+
+            if (timeout != Session.TIMEOUT_WAIT_FOREVER) {
 		        long now = System.currentTimeMillis() / 1000;
 		        if ((now - start) >= timeout) {
 		        	// We've reached the timeout
-		        	done = true;
-		        }
+		        	break;
+                }
 		    }
-		    
-		    if (! done) {
-		    	try {
-		    		// SLEEP_PERIOD is in seconds
-					Thread.sleep(SLEEP_PERIOD * 1000);
-				} catch (InterruptedException e) {
-					break;
-				}
-		    }
+
+            try {
+                // SLEEP_PERIOD is in seconds
+                Thread.sleep(SLEEP_PERIOD_MILLIS);
+            } catch (InterruptedException e) {
+                break;
+            }
 		}
+
 		return info;
 	}
 }
