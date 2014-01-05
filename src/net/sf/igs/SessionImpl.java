@@ -656,7 +656,7 @@ public class SessionImpl implements Session {
 			// Condor settings into the submit file. Otherwise, don't do anything
 			// special...
 			if (job.getStartTime() != null) {
-				long time = job.getStartTime().getTimeInMillis() / 1000;
+				long time = (job.getStartTime().getTimeInMillis() + 500) / 1000;
 				writer.write("PeriodicRelease=(CurrentTime > " + time + ")");
 				writer.newLine();
 				writer.write("Hold=True");
@@ -1013,7 +1013,7 @@ public class SessionImpl implements Session {
                     start = System.currentTimeMillis();
                 } else {
                     if (timeout > 0) {
-                        if ((System.currentTimeMillis() - start) >= timeout * 1000) {
+                        if (System.currentTimeMillis() - start >= timeout * 1000) {
                             throw new InternalException("Timed out trying to read a jobId from sessionDir files.");
                         }
                     }
@@ -1049,7 +1049,7 @@ public class SessionImpl implements Session {
 	private JobInfo monitor(JobLogParser logParser, long timeout) throws Exception {
     	// Get the current number of seconds since the epoch. We'll refer
     	// to this to make sure we stop waiting if we reach the timeout...
-    	final long start = System.currentTimeMillis() / 1000;
+    	final long start = System.currentTimeMillis();
 
         JobInfo info = null;
 
@@ -1061,8 +1061,7 @@ public class SessionImpl implements Session {
 		    }
 
             if (timeout != Session.TIMEOUT_WAIT_FOREVER) {
-		        long now = System.currentTimeMillis() / 1000;
-		        if ((now - start) >= timeout) {
+		        if (System.currentTimeMillis() - start >= timeout * 1000) {
 		        	// We've reached the timeout
 		        	break;
                 }
