@@ -136,7 +136,7 @@ public class InputPathTest {
 			session.exit();
 			
 			// Sleep a little to allow I/O to happen
-			Thread.sleep(3000);
+//			Thread.sleep(3000);
 			
 			// Now check that the STDOUT file is actually there
 			assertTrue(outputFile.exists());

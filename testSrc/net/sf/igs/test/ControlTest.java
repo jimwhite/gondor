@@ -116,8 +116,8 @@ public class ControlTest {
 			// Free job template resources
 			session.deleteJobTemplate(jt);
 			
-			// Sleep a little...
-			Thread.sleep(2000);
+//			// Sleep a little...
+//			Thread.sleep(2000);
 			
 			// Make sure the job is on the grid.
 			boolean present = TestUtils.isJobPresent(jobId);
@@ -126,8 +126,8 @@ public class ControlTest {
 			// Try suspending the job
 			session.control(jobId, Session.TERMINATE);
 			
-			// Sleep a little more...
-			Thread.sleep(2000);
+//			// Sleep a little more...
+//			Thread.sleep(2000);
 			
 			// Determine if the job is present on the grid. We use
 			// a private method to help us with this.
@@ -175,8 +175,8 @@ public class ControlTest {
 			// Free job template resources
 			session.deleteJobTemplate(jt);
 			
-			// Sleep a little...
-			Thread.sleep(3000);
+//			// Sleep a little...
+//			Thread.sleep(3000);
 			
 			// Make sure the job is on the grid.
 			boolean present = TestUtils.isJobPresent(jobId);
@@ -228,8 +228,8 @@ public class ControlTest {
 			// Free job template resources
 			session.deleteJobTemplate(jt);
 			
-			// Sleep a little...
-			Thread.sleep(3000);
+//			// Sleep a little...
+//			Thread.sleep(3000);
 			
 			// Make sure the job is on the grid.
 			boolean present = TestUtils.isJobPresent(jobId);
@@ -282,8 +282,8 @@ public class ControlTest {
 			// Release the job
 			session.control(jobId, Session.RESUME);
 			
-			// Sleep a little, then make sure the job is not held anymore
-			Thread.sleep(2000);
+//			// Sleep a little, then make sure the job is not held anymore
+//			Thread.sleep(2000);
 			
 			boolean held = TestUtils.isJobHeld(jobId);
 			assertFalse(held);
@@ -340,7 +340,7 @@ public class ControlTest {
 			session.control(jobId, Session.RELEASE);
 			
 			// Sleep a little, then make sure the job is not held anymore
-			Thread.sleep(2000);
+//			Thread.sleep(2000);
 			boolean held = TestUtils.isJobHeld(jobId);
 			assertFalse(held);
 			
@@ -404,7 +404,7 @@ public class ControlTest {
 			session.deleteJobTemplate(jt);
 			
 			// Sleep a little...
-			Thread.sleep(2000);
+//			Thread.sleep(2000);
 			
 			// Make sure the job is on the grid.
 			boolean present = TestUtils.isJobPresent(jobId);
@@ -417,7 +417,7 @@ public class ControlTest {
 			session2.control(jobId, Session.HOLD);
 			
 			// Sleep a little...
-			Thread.sleep(2000);
+//			Thread.sleep(2000);
 			
 			// Now check if we were able to hold a job that from a
 			// different session.
@@ -547,8 +547,8 @@ public class ControlTest {
 			session.control(Session.JOB_IDS_SESSION_ALL, Session.HOLD);
 			
 			// Sleep a little, then make sure the jobs are not held anymore
-			Thread.sleep(2000);
-			
+//			Thread.sleep(2000);
+
 			// Verify that all these jobs are held
 			boolean allHeld = true;
 			for (int jobIndex = 1; jobIndex <= jobQuantity; jobIndex++) {

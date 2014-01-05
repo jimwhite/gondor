@@ -91,7 +91,7 @@ public class EnvironmentTest {
 
 			// Sleep a little for I/O to catch up
 			// TODO: This setting is arbitrary. Need to make configurable (System property?)
-			Thread.sleep(3000);
+//			Thread.sleep(3000);
 			
 			// Verify that the output file is actually there.
 			assertTrue(outputFile.exists());

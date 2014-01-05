@@ -71,7 +71,7 @@ public class TestUtils {
 	 * "release" related tests.
 	 */
 	public static String createHeldJob(Session session, String jobName) throws DrmaaException, CondorExecException {
-		try {
+//		try {
 			JobTemplate jt = getSleepJobTemplate(session, jobName);
 
 			String jobId = session.runJob(jt);
@@ -80,7 +80,7 @@ public class TestUtils {
 			session.deleteJobTemplate(jt);
 			
 			// Sleep a little...
-			Thread.sleep(2000);
+//			Thread.sleep(2000);
 			
 			// Try putting the job on hold
 			session.control(jobId, Session.HOLD);
@@ -88,7 +88,7 @@ public class TestUtils {
 			// TODO: Maybe have a loop here and check several times if the
 			// first attempt shows the job isn't held yet...
 			// Sleep a little more...
-			Thread.sleep(2000);
+//			Thread.sleep(2000);
 			
 			boolean held = isJobHeld(jobId);
 			if (! held) {
@@ -96,9 +96,9 @@ public class TestUtils {
 			}
 			
 			return jobId;
-		} catch (InterruptedException ie) {
-			throw new CondorExecException("Interrupted.", ie);
-		}
+//		} catch (InterruptedException ie) {
+//			throw new CondorExecException("Interrupted.", ie);
+//		}
 	}
 	
 	/**

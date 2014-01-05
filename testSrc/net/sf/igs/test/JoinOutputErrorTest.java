@@ -191,7 +191,7 @@ public class JoinOutputErrorTest {
 			session.exit();
 			
 			// Sleep a little to allow I/O to happen
-			Thread.sleep(3000);
+//			Thread.sleep(3000);
 			
 			// Now check that the STDERR file is NOT there and that
 			// the combined file is... What we're saying here, is that when
