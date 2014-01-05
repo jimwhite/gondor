@@ -924,7 +924,7 @@ public class SessionImpl implements Session {
 		// Iterate through the files
 		for (File file : idFiles) {
 			// Make sure we have a readable file.
-			if (! (file.isFile() && file.canRead())) {
+			if (! (file.isFile() && file.canRead() && file.length() > 0)) {
 				continue;
 			}
 			
@@ -970,6 +970,7 @@ public class SessionImpl implements Session {
 
         pick_a_jobId :
         while (jobId.equals(SessionImpl.JOB_IDS_SESSION_ANY)) {
+            //TODO: This should use common code with getAllSessionJobsIDs().
         	File[] files = sessionDir.listFiles();
         	if (files.length < 1) {
                 // There are no job template files (yet).
