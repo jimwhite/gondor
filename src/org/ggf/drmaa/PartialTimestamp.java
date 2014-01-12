@@ -296,6 +296,7 @@ public class PartialTimestamp extends Calendar {
      */
     public void setModifier(int field, int value) {
         modifiers[field] = value;
+        fieldsModified = true;
     }
     
     /**
@@ -1628,7 +1629,7 @@ public class PartialTimestamp extends Calendar {
     protected void computeTime() {
         int firstSet = -1;
         
-        if (!isSet(HOUR_OF_DAY) && !isSet(HOUR) && !isSet(AM_PM)) {
+        if (!isSet(HOUR_OF_DAY) && !(isSet(HOUR) && isSet(AM_PM))) {
             throw new IllegalArgumentException("HOUR_OF_DAY is a required field.");
         }
         
