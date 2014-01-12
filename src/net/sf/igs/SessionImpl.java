@@ -289,26 +289,28 @@ public class SessionImpl implements Session {
             throw new NoActiveSessionException();
         }
 
-        File jtFile = getJobTemplateFile(jobTemplateId);
+        final int newJobTemplateId;
+
+        synchronized (this) {
+            newJobTemplateId = jobTemplateId++;
+        }
+
+        File jtFile = getJobTemplateFile(newJobTemplateId);
         try {
 			jtFile.createNewFile();
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new InternalException("Unable to create job template: " + e.getMessage());
 		}
-        JobTemplate jt = new JobTemplateImpl(this, jobTemplateId);
-        synchronized (jt) {
-        	jobTemplateId++;
-		}
-        return jt;
+
+        return new JobTemplateImpl(this, newJobTemplateId);
     }
     
     /*
      * TODO: Complete some documentation here.
      */
     private File getJobTemplateFile(int templateId) {
-        File jtFile = new File(sessionDir, "" + jobTemplateId);
-        return jtFile;
+        return new File(sessionDir, "" + templateId);
     }
     
     /**
@@ -478,8 +480,7 @@ public class SessionImpl implements Session {
 			}
 			
 			// Save all the retrieved job IDs in the session file
-			HashSet<String> jobSet = new HashSet<String>();
-			jobSet.addAll(jobs);
+			HashSet<String> jobSet = new HashSet<String>(jobs);
 			saveJobIDsInSessionFile(jt, jobSet);
 			
 			return jobs;
@@ -640,10 +641,10 @@ public class SessionImpl implements Session {
 				writer.newLine();
 			}
 			
-			// Handle the job category. This is handled the same way as the
-			// native specification.
+			// Handle the job category.
+            //TODO: Could use priority or rank for this.
 			if (job.getJobCategory() != null) {
-				writer.write(job.getJobCategory());
+				writer.write("# Category=" + job.getJobCategory());
 				writer.newLine();
 			}
 			
@@ -732,26 +733,18 @@ public class SessionImpl implements Session {
 			// Handle the case of the user/caller setting the environment for the job.
 			if (job.getJobEnvironment() != null && ! job.getJobEnvironment().isEmpty()) {
 				Map<String, String> environment = job.getJobEnvironment();
-				StringBuffer sb = new StringBuffer();
-				Iterator<String> iter = environment.keySet().iterator();
-				
+				StringBuilder sb = new StringBuilder();
+
 				// Condor has a peculiar way of handling environment variables in the submit
 				// file. Here we try to make it work by escaping quotes properly.
 				// TODO: This logic should perhaps be put into a special condorEnvEscape(String)
 				// method in Util.
 				// TODO: Needs testing
-				while (iter.hasNext()) {
-					String name = (String) iter.next();
-					String value = (String) environment.get(name);
-					
+				for (Map.Entry<String, String> entry : environment.entrySet()) {
 					// Replace quotes with double quotes.
-					value = value.replace("\"", "\"\"");
-					String pair = name + "=" + value;
+					String value = entry.getValue().replace("\"", "\"\"").replace("'", "''");
+					String pair = entry.getKey() + "='" + value + "' ";
 					sb.append(pair);
-					// Append a space, unless it's the last variable.
-					if (! iter.hasNext()) {
-						sb.append(" ");
-					}
 				}
 				// This is the Condor directive for setting the job environment.
 				writer.write("Environment=\"" + sb.toString() + "\"");
