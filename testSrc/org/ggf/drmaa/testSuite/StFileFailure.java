@@ -71,7 +71,7 @@ public abstract class StFileFailure extends Test
 		}
 		catch (Exception e)
 		{
-			System.err.println("Test " + this.type +" failed");
+			System.err.println("Test " + this.type +" failed?  Got exception from runJob rather than Session.FAILED.");
             		e.printStackTrace();
 			this.stateAllTest = false;
 		}
