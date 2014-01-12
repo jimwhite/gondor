@@ -985,8 +985,7 @@ public class JobTemplateImpl implements JobTemplate {
      */
     public Set<String> getAttributeNames() throws DrmaaException {
     	if (attributeSet == null || attributeSet.isEmpty()) {
-    		attributeSet = new HashSet<String>();
-        	attributeSet.addAll(Arrays.asList(ATTRIBUTES));
+    		attributeSet = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(ATTRIBUTES)));
     	}
         return attributeSet;
     }
