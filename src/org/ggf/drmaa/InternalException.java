@@ -55,4 +55,13 @@ public class InternalException extends RuntimeException {
     public InternalException(String msg) {
         super(msg);
     }
+
+    /**
+     * Constructs an instance of <code>InternalException</code> with the
+     * specified detail message.
+     * @param msg the detail message.
+     */
+    public InternalException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }
