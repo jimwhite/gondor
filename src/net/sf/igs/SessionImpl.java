@@ -34,6 +34,7 @@ import java.util.Set;
 import org.ggf.drmaa.AlreadyActiveSessionException;
 import org.ggf.drmaa.DrmaaException;
 import org.ggf.drmaa.DrmsInitException;
+import org.ggf.drmaa.ExitTimeoutException;
 import org.ggf.drmaa.HoldInconsistentStateException;
 import org.ggf.drmaa.InternalException;
 import org.ggf.drmaa.InvalidJobException;
@@ -145,27 +146,14 @@ public class SessionImpl implements Session {
     	
         // Check if we have a valid job ID
     	if (! Util.validJobId(jobId)) {
-    		throw new InvalidJobException();
+    		throw new InvalidJobException("Invalid jobId : " + jobId);
     	}
     	
     	// A collection for all the job IDs that we need to control.
-    	Set<String> jobIDs = new HashSet<String>();
-    	
-    	try {
-        	// Check if we are operating on all job IDs. If we are, then get all
-        	// the job IDs for this session and perform the control on all of them
-        	if (jobId.equals(Session.JOB_IDS_SESSION_ALL)) {
-        		// Get all the job IDs for this session and put them into the set.
-        		jobIDs.addAll(getAllSessionJobsIDs());
-        	} else {
-        		// Only 1 job ID to control...
-        		jobIDs.add(jobId);
-        	}
-    	} catch (IOException ioe) {
-    		throw new InternalException("Unable to scan session for job IDs: " + ioe.getMessage());
-    	}
+        // Check if we are operating on all job IDs. If we are, then get all
+        // the job IDs for this session and perform the control on all of them
+    	Set<String> jobIDs = jobId.equals(Session.JOB_IDS_SESSION_ALL) ? getAllSessionJobsIDs() : Collections.singleton(jobId);
 
-    	
     	try {
 			// Iterate through the IDs and control them as specified.
 			for (String idToControl : jobIDs) {
@@ -173,7 +161,7 @@ public class SessionImpl implements Session {
 			}
 		} catch (CondorExecException e) {
 			e.printStackTrace();
-			throw new InternalException("Unable to run condor binary: " + e.getMessage());
+			throw new InternalException("Unable to run condor binary: " + e.getMessage(), e);
 		}
     }
 
@@ -234,6 +222,8 @@ public class SessionImpl implements Session {
      * @throws DrmaaException {@inheritDoc}
      */
     public void exit() throws DrmaaException {
+        //TODO: Reap all jobs with a zero wait synch w/ dispose then condor_rm any that remain.
+        //TODO: Synch with waits and such that may be surprised by sessionDir disappearing.
     	synchronized (JOB_IDS_SESSION_ALL) {
 			try {
 				if (activeSession) {
@@ -821,7 +811,7 @@ public class SessionImpl implements Session {
 			// Close the writer
 			writer.close();
 		} catch (IOException e) {
-			throw new Exception("Unable to create the Condor submit file.");
+			throw new Exception("Unable to create the Condor submit file.", e);
 		}
 		return tempFile;
     }
@@ -899,27 +889,24 @@ public class SessionImpl implements Session {
     	// to scan for all the IDs belonging to the session, or to use
     	// the IDs provided by the caller.
     	Set<String> toWaitFor;
-    	try {
-			if (waitOnAllSessionJobs) {
-				// We've been told to wait for all the session jobs. Therefore
-				// our set of job IDs needs to contain all the job IDs belonging
-				// to the session. That means we need to scan the session directory
-				// for all the job IDs belonging to it. For this, we make use of a
-				// private method...
-				toWaitFor = getAllSessionJobsIDs();
-			} else {
-				// Okay, in this case, we only need to wait for the job IDs that have
-				// been explicitly passed to us. None of the IDs was equal to the
-				// special value indicating that we should wait for all... Therefore
-				// we create a new set, and all the IDs that we've been told about.
-				toWaitFor = new HashSet<String>(jobIds);
-			}
-		} catch (IOException e) {
-			throw new InternalException(e.getMessage());
-		}
-    	
+        if (waitOnAllSessionJobs) {
+            // We've been told to wait for all the session jobs. Therefore
+            // our set of job IDs needs to contain all the job IDs belonging
+            // to the session. That means we need to scan the session directory
+            // for all the job IDs belonging to it. For this, we make use of a
+            // private method...
+            toWaitFor = getAllSessionJobsIDs();
+        } else {
+            // Okay, in this case, we only need to wait for the job IDs that have
+            // been explicitly passed to us. None of the IDs was equal to the
+            // special value indicating that we should wait for all... Therefore
+            // we create a new set, and all the IDs that we've been told about.
+            toWaitFor = new HashSet<String>(jobIds);
+        }
+
     	// Let's determine when we started waiting and how long we are able to wait
     	// by computing the deadline.
+        // But if we're not using a positive timeout then don't change the value.
     	long now = (timeout > 0) ? Util.getSecondsFromEpoch() : 0;
     	long deadline = timeout + now;
 
@@ -930,8 +917,10 @@ public class SessionImpl implements Session {
     		// As we consume time, the timeouts get shorter and shorter...
     		long individualTimeout = deadline - now;
 
+            // If we using a positive timeout but we've gone past the deadline
+            // then use a no wait timeout (0).
             if (timeout > 0 && individualTimeout < 0) {
-                individualTimeout = 0;
+                individualTimeout = TIMEOUT_NO_WAIT;
             }
 
     		wait(jobId, individualTimeout, dispose);
@@ -949,17 +938,23 @@ public class SessionImpl implements Session {
      * @return a {@link Set} of String job IDs
      * @throws IOException
      */
-    private Set<String> getAllSessionJobsIDs() throws IOException {
-		File[] idFiles = session_jobs_dir.listFiles();
-		Set<String> idSet = new HashSet<String>();
-		
-		// Iterate through the files
-		for (File file : idFiles) {
-			// Make sure we have a readable file.
-			if (! (file.isFile() && file.canRead() /*&& file.length() > 0*/)) {
-				continue;
-			}
-			
+    private Set<String> getAllSessionJobsIDs() throws DrmaaException {
+        try {
+            Set<String> idSet;
+
+            File[] idFiles = session_jobs_dir.listFiles();
+            if (idFiles == null) {
+                idSet = Collections.emptySet();
+            } else {
+                idSet = new HashSet<String>(idFiles.length);
+
+                // Iterate through the files
+                for (File file : idFiles) {
+                    // Make sure we have a readable file.
+                    if (! (file.isFile() && file.canRead() /*&& file.length() > 0*/)) {
+                        continue;
+                    }
+
 //			try {
 //				BufferedReader reader = new BufferedReader(new FileReader(file));
 //				String jobId = null;
@@ -974,10 +969,14 @@ public class SessionImpl implements Session {
 //				throw ioe;
 //			}
 
-            idSet.add(file.getName());
-		}
+                    idSet.add(file.getName());
+                }
+            }
 
-		return idSet;
+            return idSet;
+        } catch (SecurityException sex) {
+            throw new InternalException("Can't list files in session jobs dir.", sex);
+        }
 	}
 
 	/**
@@ -1011,13 +1010,13 @@ public class SessionImpl implements Session {
         while (jobId.equals(SessionImpl.JOB_IDS_SESSION_ANY)) {
             //TODO: This should use common code with getAllSessionJobsIDs().
         	File[] files = session_jobs_dir.listFiles();
-        	if (files.length < 1) {
+        	if (files == null || files.length < 1) {
                 // There are no job session files (yet).
                 // Not sure whether we should quit right away, but since we've
                 // got this time out loop we'll give them a second chance.
                 if (start != 0) {
                     // We've looked twice for template files and find none.
-                    throw new InvalidJobException();
+                    throw new InvalidJobException("JOB_IDS_SESSION_ANY fails because no jobs for this session.");
                 }
             } else {
         		// TODO: Pick a file at random instead of just the first
@@ -1055,7 +1054,7 @@ public class SessionImpl implements Session {
                 } else {
                     if (timeout > 0) {
                         if (System.currentTimeMillis() - start >= timeout * 1000) {
-                            throw new InternalException("Timed out trying to read a jobId from sessionDir files.");
+                            throw new ExitTimeoutException("Timed out trying to read a jobId from sessionDir files.");
                         }
                     }
                 }
@@ -1070,29 +1069,26 @@ public class SessionImpl implements Session {
 
         // Check if we have a valid job ID
         if (! (Util.validJobId(jobId))) {
-            throw new InvalidJobException();
+            throw new InvalidJobException("Job " + jobId + " is invalid.");
         }
 
-    	try {
-            JobLogParser logParser = new JobLogParser(this, jobId);
-            JobInfo info = monitor(logParser, timeout);
+        JobLogParser logParser = new JobLogParser(this, jobId);
+        JobInfo info = monitor(logParser, timeout);
 
-            if (dispose && info != null) {
-                File job_session_file = getJobSessionFile(info.getJobId());
-                job_session_file.delete();
-            }
+        if (info == null) {
+            throw new ExitTimeoutException("Timed out waiting for job " + jobId);
+        } else if (dispose) {
+            File job_session_file = getJobSessionFile(info.getJobId());
+            job_session_file.delete();
+        }
 
-            return info;
-		} catch (Exception ioe) {
-			ioe.printStackTrace();
-			throw new InternalException(ioe.getMessage());
-		}
+        return info;
     }
 
     /*
      * TODO: Complete documentation
      */
-	private JobInfo monitor(JobLogParser logParser, long timeout) throws Exception {
+	private JobInfo monitor(JobLogParser logParser, long timeout) throws DrmaaException {
     	// Get the current number of seconds since the epoch. We'll refer
     	// to this to make sure we stop waiting if we reach the timeout...
     	final long start = System.currentTimeMillis();
@@ -1101,7 +1097,11 @@ public class SessionImpl implements Session {
 
 		// Start monitoring
 		while (true) {
-		    info = logParser.parse();
+		    try {
+                info = logParser.parse();
+            } catch (IOException e) {
+                throw new InternalException(e.getMessage(), e);
+            }
 		    if (info.hasExited() || timeout == Session.TIMEOUT_NO_WAIT) {
 		    	break;
 		    }
