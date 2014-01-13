@@ -67,17 +67,16 @@ public class JobLogParser {
 	 * @param jobId a <code>String</code>
 	 * @throws InvalidJobException 
 	 */
-	public JobLogParser(String jobId) throws InvalidJobException {
+	public JobLogParser(SessionImpl session, String jobId) throws InvalidJobException {
 		if (! Util.validJobId(jobId)) {
 			throw new InvalidJobException("Invalid job id: " + jobId);
 		}
         //TODO: We don't parse this from the log currently, but at least remember what it should be.
         this.jobId = jobId;
-		String log = Util.getLogFromId(jobId);
-		File logFile = new File(log);
+		File logFile = session.getLogFromId(jobId);
 		
 		if (! (logFile.exists() && logFile.isFile() && logFile.canRead())) {
-			throw new IllegalArgumentException("Log file doesn't exist or isn't readable.");
+			throw new IllegalArgumentException("Log file doesn't exist or isn't readable: " + logFile.getPath());
 		}
 		this.logFile = logFile;
 	}
