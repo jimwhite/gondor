@@ -831,24 +831,22 @@ public class SessionImpl implements Session {
     	// A flag to indicate whether to wait for all jobs in the session or not.
     	boolean waitOnAllSessionJobs = false;
     	
-    	Iterator<String> iter = jobIds.iterator();
-    	while (iter.hasNext()) {
-    		String jobId = (String) iter.next();
+        for (Object jobId : jobIds)  {
     		// If any of the job IDs provided is the magical JOB_IDS_SESSION_ALL,
-    		// the stop checking because we need to wait for ALL IDs belonging to
+    		// then stop checking because we need to wait for ALL IDs belonging to
     		// this session...
     		if (jobId.equals(Session.JOB_IDS_SESSION_ALL))   {
     			waitOnAllSessionJobs = true;
     			break;
-    		} else if (! Util.validJobId(jobId)) {
+    		} else if (! Util.validJobId((String) jobId)) {
     			throw new InvalidJobException("Job " + jobId + " is invalid.");
     		}
     	}
     	
-    	// So now bad IDs detected. Just need to check whether we need
+    	// So no bad IDs detected. Just need to check whether we need
     	// to scan for all the IDs belonging to the session, or to use
     	// the IDs provided by the caller.
-    	Set<String> toWaitFor = null;
+    	Set<String> toWaitFor;
     	try {
 			if (waitOnAllSessionJobs) {
 				// We've been told to wait for all the session jobs. Therefore
@@ -862,41 +860,35 @@ public class SessionImpl implements Session {
 				// been explicitly passed to us. None of the IDs was equal to the
 				// special value indicating that we should wait for all... Therefore
 				// we create a new set, and all the IDs that we've been told about.
-				toWaitFor = new HashSet<String>();
-				toWaitFor.addAll(jobIds);
+				toWaitFor = new HashSet<String>(jobIds);
 			}
 		} catch (IOException e) {
 			throw new InternalException(e.getMessage());
 		}
     	
-    	// We now know what job IDs to wait for. Cycle through each and wait for it.
-		// To be able to do this, we should iterate through the set. The iterator()
-		// method to the rescue!
-    	iter = toWaitFor.iterator();
-    	
     	// Let's determine when we started waiting and how long we are able to wait
     	// by computing the deadline.
-    	long start = Util.getSecondsFromEpoch();
-    	long now = start;
-    	long deadline = start + timeout;
-    
+    	long now = (timeout > 0) ? Util.getSecondsFromEpoch() : 0;
+    	long deadline = timeout + now;
+
+        // We now know what job IDs to wait for. Cycle through each and wait for it.
     	// Wait for each job ID. Mind the timeout! If we exceed our
     	// deadline, break out of the loop...
-    	while (iter.hasNext()) {
-    		String jobId = (String) iter.next();
-    		
+    	for (String jobId : toWaitFor) {
     		// As we consume time, the timeouts get shorter and shorter...
     		long individualTimeout = deadline - now;
+
+            if (timeout > 0 && individualTimeout < 0) {
+                individualTimeout = 0;
+            }
+
     		wait(jobId, individualTimeout);
     		
     		// TODO: Handle "disposal"
     		// Okay, the job has completed. Do we remove/dispose of the
     		// job from the session directory? Consult the "dispose" boolean...
-    		now = Util.getSecondsFromEpoch();
-    		if (now >= deadline) {
-    			// We've exceeded the limit of our overall timeout
-    			break;
-    		}
+
+            if (timeout > 0) now = Util.getSecondsFromEpoch();
     	}
     }
     
