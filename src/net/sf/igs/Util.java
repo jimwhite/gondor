@@ -29,22 +29,7 @@ import java.util.regex.Pattern;
  */
 public class Util {
 
-	/**
-	 * The system's temp directory as determined by the JVM's "java.io.tmpdir" system property.
-	 */
-	public static final String TMP = System.getProperty("java.io.tmpdir");
-	
-    /**
-     * The prefix that all log files for submitted Condor jobs will have.
-     */
-    public static final String LOG_FILE_PREFIX = "condor_drmaa_";
-    
-	/**
-	 * The log file template for submitted Condor jobs.
-	 */
-	public static final String LOG_TEMPLATE = TMP + File.separator + LOG_FILE_PREFIX + "$(Cluster).$(Process).log";
-    
-	// This is the regular expression used to match the job id from the job's log file
+    // This is the regular expression used to match the job id from the job's log file
 	// The job id looks like this: (123.000.000)  The first set of 3 digits is the job
 	// id.
 	private static Pattern pattern = Pattern.compile("\\((\\d{3})\\.\\d{3}\\.\\d{3}\\)");
@@ -62,22 +47,8 @@ public class Util {
     	}
     	return valid;
     }
-    
-    /**
-     * Given a condor job ID of a job submitted through Condor-JDRMAA, return the path to
-     * the log file that belongs to it. There is no guarantee that the log file exists or
-     * not as it is simply where the log file should be, for instance, if the job is not
-     * yet submitted...
-     * 
-     * @param jobId a <code>String</code> containing the job ID.
-     * @return a <code>String</code> with the absolute path.
-     */
-    public static String getLogFromId(String jobId) {
-    	String log = TMP + File.separator + LOG_FILE_PREFIX + jobId + ".log";
-    	return log;
-    }
 
-	/**
+    /**
 	 * Given a Condor log file, determine the job Id.
 	 * 
 	 * @param logFile a {@link File}

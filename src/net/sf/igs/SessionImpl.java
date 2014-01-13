@@ -33,9 +33,9 @@ import java.util.Set;
 
 import org.ggf.drmaa.AlreadyActiveSessionException;
 import org.ggf.drmaa.DrmaaException;
+import org.ggf.drmaa.DrmsInitException;
 import org.ggf.drmaa.HoldInconsistentStateException;
 import org.ggf.drmaa.InternalException;
-import org.ggf.drmaa.InvalidContactStringException;
 import org.ggf.drmaa.InvalidJobException;
 import org.ggf.drmaa.InvalidJobTemplateException;
 import org.ggf.drmaa.JobInfo;
@@ -61,13 +61,30 @@ public class SessionImpl implements Session {
      * condor submit files are not removed after submission...
      */
     public static final String CONDOR_JDRMAA_DEBUG = "condor.jdrmaa.debug";
-	
-    private static final String SUBMIT_FILE_PREFIX = "condor_drmaa_";
+
+
+    private static final String SESSION_DIR_PREFIX = "jdrmaa_session-";
+    /**
+     * The prefix that all log files for submitted Condor jobs will have.
+     */
+    public static final String LOG_FILE_PREFIX = "jdrmaa_log-";
+    /**
+	 * The log file template for submitted Condor jobs.
+	 */
+	public static final String LOG_TEMPLATE = LOG_FILE_PREFIX + "$(Cluster).$(Process).log";
+
+    private static final String SUBMIT_FILE_SUFFIX = ".job";
+
+    private static final String SESSION_JOBS_DIR_NAME = "jobs";
+
 	private static final String DRM_SYSTEM = "Condor";
-//    private static final String CONDOR_JDRMAA_DEFAULT_CONTACT = "condor_drmaa_default_contact";
-    private String contact = "";
+
+    private static final String CONDOR_JDRMAA_DEFAULT_CONTACT_SUFFIX = "@condor_jdrmaa";
+
+    private String contact;
     private boolean activeSession = false;
-    private File sessionDir = null;
+    private File sessionDir;
+    private File session_jobs_dir;
     private int jobTemplateId = 1;
     
     // Sleep period is in seconds
@@ -80,7 +97,25 @@ public class SessionImpl implements Session {
     public SessionImpl() {
     	// No-arguments constructor
     }
-    
+
+    protected File getJobSessionFile(String jobId)
+    {
+        return new File(session_jobs_dir, jobId);
+    }
+
+    /**
+     * Given a condor job ID of a job submitted through Condor-JDRMAA, return the path to
+     * the log file that belongs to it. There is no guarantee that the log file exists or
+     * not as it is simply where the log file should be, for instance, if the job is not
+     * yet submitted...
+     *
+     * @param jobId a <code>String</code> containing the job ID.
+     * @return a <code>String</code> with the absolute path.
+     */
+    public File getLogFromId(String jobId) {
+    	return new File(sessionDir, LOG_FILE_PREFIX + jobId + ".log");
+    }
+
     /**
      * <p>Controls Condor jobs.</p>
      * 
@@ -203,7 +238,9 @@ public class SessionImpl implements Session {
 			try {
 				if (activeSession) {
 					if (sessionDir != null && sessionDir.exists()) {
-						Util.deleteDir(sessionDir);
+                        if (System.getProperty(CONDOR_JDRMAA_DEBUG) == null) {
+                            Util.deleteDir(sessionDir);
+                        }
 					}
 				} else {
 					throw new NoActiveSessionException();
@@ -375,8 +412,8 @@ public class SessionImpl implements Session {
      */
     public void init(String contact) throws DrmaaException {
     	if (contact == null || contact.length() == 0) {
-            throw new InvalidContactStringException();
-//            contact = CONDOR_JDRMAA_DEFAULT_CONTACT;
+//            throw new InvalidContactStringException();
+            contact = System.getProperty("user.name") + CONDOR_JDRMAA_DEFAULT_CONTACT_SUFFIX;
     	}
     	
     	// Check that we actually have Condor installed.
@@ -385,9 +422,6 @@ public class SessionImpl implements Session {
     		throw new InternalException("No Condor installation found.");
     	}
 
-        // Make the directory for the session
-        File topDir = new File(Util.TMP,  SUBMIT_FILE_PREFIX + System.getProperty("user.name"));
-
         //TODO: What is this synch intended to do?
     	synchronized (contact) {
         	if (activeSession) {
@@ -395,15 +429,32 @@ public class SessionImpl implements Session {
         	}
             this.contact = contact;
 
-            sessionDir = new File(topDir, contact);
-            if (sessionDir.exists()) {
-            	boolean deleted = Util.deleteDir(sessionDir);
-            	if (! deleted) {
-            		throw new InternalException("Unable to delete " + sessionDir + " and it is in the way.");
-            	}
+            try {
+                File tmpFile = File.createTempFile(SESSION_DIR_PREFIX + contact + "-", "");
+                sessionDir = new File(tmpFile.getParent(), tmpFile.getName() + ".dir");
+                session_jobs_dir = new File(sessionDir, SESSION_JOBS_DIR_NAME);
+
+                if (System.getProperty(CONDOR_JDRMAA_DEBUG) != null) {
+                    System.err.println("sessionDir:" + sessionDir.getPath());
+                }
+            } catch (IOException e) {
+                throw new DrmsInitException(e.getMessage());
             }
+
+//            if (sessionDir.exists()) {
+//            	boolean deleted = Util.deleteDir(sessionDir);
+//            	if (! deleted) {
+//            		throw new InternalException("Unable to delete " + sessionDir + " and it is in the way.");
+//            	}
+//            }
+
             sessionDir.mkdirs();
-            sessionDir.deleteOnExit();
+            if (System.getProperty(CONDOR_JDRMAA_DEBUG) == null) {
+                sessionDir.deleteOnExit();
+            }
+
+            session_jobs_dir.mkdir();
+
             activeSession = true;
 		}
     }
@@ -481,7 +532,7 @@ public class SessionImpl implements Session {
 			}
 			
 			// Save all the retrieved job IDs in the session file
-			saveJobIDsInSessionFile(jt, jobs);
+			saveJobIDsInSessionFile(jobs);
 			
 			return jobs;
 		} catch (Exception e) {
@@ -524,7 +575,7 @@ public class SessionImpl implements Session {
 			jobId = submit(submitFile);
 			
 			// Save the retrieved jobId in the session file
-			saveJobIDsInSessionFile(jt, Collections.singleton(jobId));
+			saveJobIDsInSessionFile(Collections.singleton(jobId));
         } catch (Exception e) {
         	throw new InternalException(e.getMessage());
         }
@@ -539,17 +590,18 @@ public class SessionImpl implements Session {
 	 * @throws IOException
 	 * @throws DrmaaException 
 	 */
-	private void saveJobIDsInSessionFile(JobTemplate template, Collection<String> jobIDs)
+	private void saveJobIDsInSessionFile(Collection<String> jobIDs)
 			throws IOException, DrmaaException {
-		File templateFile = getJobTemplateFile(((JobTemplateImpl) template).getId());
-		BufferedWriter writer = new BufferedWriter(new FileWriter(templateFile));
 
 		// Iterate over the IDs and write them to the file
 		for (String jobId : jobIDs) {
-			writer.write(jobId);
+            File jobSessionFile = getJobSessionFile(jobId);
+            BufferedWriter writer = new BufferedWriter(new FileWriter(jobSessionFile));
+			writer.write(getLogFromId(jobId).getAbsolutePath());
 			writer.newLine();
+            writer.newLine();
+            writer.close();
 		}
-		writer.close();
 	}
     
     /**
@@ -571,7 +623,7 @@ public class SessionImpl implements Session {
     	File tempFile = null;
     	
 		try {
-	    	tempFile = File.createTempFile(SUBMIT_FILE_PREFIX, null);
+	    	tempFile = File.createTempFile(job.getJobName() + "-", SUBMIT_FILE_SUFFIX, sessionDir);
 			BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
 			
 			writer.write("# Condor Submit file");
@@ -580,7 +632,7 @@ public class SessionImpl implements Session {
 			writer.newLine();
 			writer.write("#");
 			writer.newLine();
-			writer.write("Log=" + Util.LOG_TEMPLATE);
+			writer.write("Log=" + sessionDir.getPath() + File.separator + LOG_TEMPLATE);
 			writer.newLine();
 			writer.write("Universe=vanilla");
 			writer.newLine();
@@ -882,11 +934,8 @@ public class SessionImpl implements Session {
                 individualTimeout = 0;
             }
 
-    		wait(jobId, individualTimeout);
+    		wait(jobId, individualTimeout, dispose);
     		
-    		// TODO: Handle "disposal"
-    		// Okay, the job has completed. Do we remove/dispose of the
-    		// job from the session directory? Consult the "dispose" boolean...
 
             if (timeout > 0) now = Util.getSecondsFromEpoch();
     	}
@@ -901,30 +950,33 @@ public class SessionImpl implements Session {
      * @throws IOException
      */
     private Set<String> getAllSessionJobsIDs() throws IOException {
-		File[] idFiles = sessionDir.listFiles();
+		File[] idFiles = session_jobs_dir.listFiles();
 		Set<String> idSet = new HashSet<String>();
 		
 		// Iterate through the files
 		for (File file : idFiles) {
 			// Make sure we have a readable file.
-			if (! (file.isFile() && file.canRead() && file.length() > 0)) {
+			if (! (file.isFile() && file.canRead() /*&& file.length() > 0*/)) {
 				continue;
 			}
 			
-			try {
-				BufferedReader reader = new BufferedReader(new FileReader(file));
-				String jobId = null;
-				while ((jobId = reader.readLine()) != null) {
-					jobId = jobId.trim();
-					//  Do one more check to make sure we have a good looking ID.
-					if (Util.validJobId(jobId)) {
-						idSet.add(jobId);
-					}
-				}
-			} catch (IOException ioe) {
-				throw ioe;
-			}
+//			try {
+//				BufferedReader reader = new BufferedReader(new FileReader(file));
+//				String jobId = null;
+//				while ((jobId = reader.readLine()) != null) {
+//					jobId = jobId.trim();
+//					//  Do one more check to make sure we have a good looking ID.
+//					if (Util.validJobId(jobId)) {
+//						idSet.add(jobId);
+//					}
+//				}
+//			} catch (IOException ioe) {
+//				throw ioe;
+//			}
+
+            idSet.add(file.getName());
 		}
+
 		return idSet;
 	}
 
@@ -936,6 +988,10 @@ public class SessionImpl implements Session {
      * @throws DrmaaException {@inheritDoc}
      */
     public JobInfo wait(String jobId, long timeout) throws DrmaaException {
+        return wait(jobId, timeout, true);
+    }
+
+    protected JobInfo wait(String jobId, long timeout, boolean dispose) throws DrmaaException {
     	// Make sure we have a good timeout, but check that it's not one of the
     	// predefined values.
     	if (timeout < 0 && timeout != Session.TIMEOUT_WAIT_FOREVER) {
@@ -954,9 +1010,9 @@ public class SessionImpl implements Session {
         pick_a_jobId :
         while (jobId.equals(SessionImpl.JOB_IDS_SESSION_ANY)) {
             //TODO: This should use common code with getAllSessionJobsIDs().
-        	File[] files = sessionDir.listFiles();
+        	File[] files = session_jobs_dir.listFiles();
         	if (files.length < 1) {
-                // There are no job template files (yet).
+                // There are no job session files (yet).
                 // Not sure whether we should quit right away, but since we've
                 // got this time out loop we'll give them a second chance.
                 if (start != 0) {
@@ -966,23 +1022,25 @@ public class SessionImpl implements Session {
             } else {
         		// TODO: Pick a file at random instead of just the first
         		for (File toWaitFor : files) {
-                    try {
+//                    try {
                         if (toWaitFor.length() > 0 && toWaitFor.canRead() && toWaitFor.isFile()) {
-                            BufferedReader buf = new BufferedReader(new FileReader(toWaitFor));
-                            //TODO: Is the writing locked?  How can we be sure we get it all?
-                            // Should we be looking for the EOL?
-                            String line = buf.readLine();
-                            if (line != null) {
-                                line = line.trim();
-                                if (line.length() > 0) {
-                                    jobId = line;
-                                    break pick_a_jobId;
-                                }
-                            }
+//                            BufferedReader buf = new BufferedReader(new FileReader(toWaitFor));
+//                            //TODO: Is the writing locked?  How can we be sure we get it all?
+//                            // Should we be looking for the EOL?
+//                            String line = buf.readLine();
+//                            if (line != null) {
+//                                line = line.trim();
+//                                if (line.length() > 0) {
+//                                    jobId = line;
+//                                    break pick_a_jobId;
+//                                }
+//                            }
+                            jobId = toWaitFor.getName();
+                            break  pick_a_jobId;
                         }
-                    } catch (IOException e) {
-//                        throw new InternalException("Unable to read file " + toWaitFor.getAbsolutePath());
-                    }
+//                    } catch (IOException e) {
+////                        throw new InternalException("Unable to read file " + toWaitFor.getAbsolutePath());
+//                    }
                 }
         	}
 
@@ -1016,8 +1074,13 @@ public class SessionImpl implements Session {
         }
 
     	try {
-            JobLogParser logParser = new JobLogParser(jobId);
+            JobLogParser logParser = new JobLogParser(this, jobId);
             JobInfo info = monitor(logParser, timeout);
+
+            if (dispose && info != null) {
+                File job_session_file = getJobSessionFile(info.getJobId());
+                job_session_file.delete();
+            }
 
             return info;
 		} catch (Exception ioe) {
