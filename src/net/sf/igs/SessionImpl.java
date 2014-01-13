@@ -23,6 +23,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -473,15 +474,14 @@ public class SessionImpl implements Session {
 			String jobId = submit(submitFile);
 			jobId = jobId.replace(".0", "");
 			
-			ArrayList<String> jobs = new ArrayList<String>();
+			ArrayList<String> jobs = new ArrayList<String>(number);
 			for (int jobIndex = 0; jobIndex < end; jobIndex++) {
 				String fullJobId = jobId + "." + jobIndex;
 				jobs.add(fullJobId);
 			}
 			
 			// Save all the retrieved job IDs in the session file
-			HashSet<String> jobSet = new HashSet<String>(jobs);
-			saveJobIDsInSessionFile(jt, jobSet);
+			saveJobIDsInSessionFile(jt, jobs);
 			
 			return jobs;
 		} catch (Exception e) {
@@ -539,15 +539,13 @@ public class SessionImpl implements Session {
 	 * @throws IOException
 	 * @throws DrmaaException 
 	 */
-	private void saveJobIDsInSessionFile(JobTemplate template, Set<String> jobIDs)
+	private void saveJobIDsInSessionFile(JobTemplate template, Collection<String> jobIDs)
 			throws IOException, DrmaaException {
 		File templateFile = getJobTemplateFile(((JobTemplateImpl) template).getId());
 		BufferedWriter writer = new BufferedWriter(new FileWriter(templateFile));
-		Iterator<String> iter = jobIDs.iterator();
-		
+
 		// Iterate over the IDs and write them to the file
-		while (iter.hasNext()) {
-			String jobId = iter.next();
+		for (String jobId : jobIDs) {
 			writer.write(jobId);
 			writer.newLine();
 		}
