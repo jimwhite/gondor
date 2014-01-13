@@ -30,12 +30,17 @@ public class MtExitDuringSubmitOrWait extends Mt
 	{
 		try
 		{
-			this.session.init(contact);
-            System.out.println("Session Init success");
+//			this.session.init(contact);
+//            System.out.println("Session Init success");
 
 			for (int i=0; i<this.nThreads;i++)
 			{
-				threads[i] = new ThreadExecutionSubmitWait(session, this.executable, i, this.type, this.jobChunk);
+                Session threadSession = factory.getSession();
+                threadSession.init(contact);
+                System.out.println("Thread #" + i + " Session Init success");
+
+				threads[i] = new ThreadExecutionSubmitWait(threadSession, this.executable, i, this.type, this.jobChunk);
+                threads[i].args.set(0, "100");
 				threads[i].start();
 				threads[i].throwException();
 			}
@@ -49,9 +54,17 @@ public class MtExitDuringSubmitOrWait extends Mt
 			catch(InterruptedException e){}
 			
 			System.out.println("20 seconds sleeped");
-			
-			this.session.exit();
-			System.out.println("Session Exit");
+
+            for (int i=0; i<this.nThreads;++i) {
+                try
+                {
+                    threads[i].session.exit();
+                }
+                catch (DrmaaException e)
+                {
+                    System.err.println("Thread #" + i + " drmaa_exit() failed");
+                }
+            }
 			
 			System.out.println("Join for each job");
 			for (int i=0; i<this.nThreads;i++)
@@ -64,12 +77,12 @@ public class MtExitDuringSubmitOrWait extends Mt
 		}
 		catch (NoActiveSessionException e)
 		{
-			System.out.println("Succesfully finished test "+ this.type);
+			System.out.println("Successfully finished test "+ this.type);
 		}
 		catch (Exception e)
 		{
 			System.err.println("Test " + this.type +" failed");
-            		e.printStackTrace();
+            e.printStackTrace();
 			this.stateAllTest = false;
 		}
 	}
