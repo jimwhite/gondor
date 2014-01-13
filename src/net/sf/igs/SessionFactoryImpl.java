@@ -24,8 +24,8 @@ import org.ggf.drmaa.Session;
  * This is the implementation of {@link ClearableSessionFactory}.
  */
 public class SessionFactoryImpl extends ClearableSessionFactory {
-   private Object lock = new Object ();
-   private Session session = null;
+//   private Object lock = new Object ();
+//   private Session session = null;
    
    /** Creates a new instance of SessionFactoryImpl */
    public SessionFactoryImpl() {
@@ -33,12 +33,14 @@ public class SessionFactoryImpl extends ClearableSessionFactory {
    }
 
    public org.ggf.drmaa.Session getSession() {
-      synchronized (lock) {
-         if (session == null) {
-            session = new SessionImpl ();
-         }
-      }
-      
-      return session;
+//      synchronized (lock) {
+//         if (session == null) {
+//            session = new SessionImpl ();
+//         }
+//      }
+//
+//      return session;
+
+       return new SessionImpl();
    }   
 }
