@@ -30,12 +30,13 @@ public class MtSubmitMtWait extends Mt
 	{
 		try
 		{
-			this.session.init(contact);
-            System.out.println("Session Init success");
-
 			for (int i=0; i<this.nThreads;i++)
 			{
-				threads[i] = new ThreadExecutionSubmitWait(session, executable, i, this.type, this.jobChunk);
+                Session threadSession = factory.getSession();
+                threadSession.init(contact);
+                System.out.println("Thread #" + i + " Session Init success");
+
+                threads[i] = new ThreadExecutionSubmitWait(threadSession, executable, i, this.type, this.jobChunk);
 				threads[i].start();
 				threads[i].throwException();
 			}
@@ -55,16 +56,18 @@ public class MtSubmitMtWait extends Mt
             		e.printStackTrace();
 			this.stateAllTest = false;
 		}
-		
-		try
-		{
-			this.session.exit();
-		}
-		catch (DrmaaException e)
-		{
-			System.err.println("drmaa_exit() failed");
-            		e.printStackTrace();	
-			this.stateAllTest = false;
-		}
+
+        for (int i=0; i<this.nThreads;++i) {
+            try
+            {
+                    threads[i].session.exit();
+            }
+            catch (DrmaaException e)
+            {
+                System.err.println("Thread #" + i + " drmaa_exit() failed");
+                        e.printStackTrace();
+                this.stateAllTest = false;
+            }
+        }
 	}
 }
