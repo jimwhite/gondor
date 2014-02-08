@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/condor-jdrmaa.iml" filepath="$PROJECT_DIR$/condor-jdrmaa.iml" />
+      <module fileurl="file://$PROJECT_DIR$/gondor.iml" filepath="$PROJECT_DIR$/gondor.iml" />
     </modules>
   </component>
 </project>
