@@ -9,7 +9,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="TEST" name="junit-4.5" level="project" />
-    <orderEntry type="library" name="groovy-2.2.1" level="application" />
+    <orderEntry type="library" name="groovy-2.3.0-SNAPSHOT" level="application" />
+    <orderEntry type="module" module-name="groosh" />
   </component>
 </module>
 

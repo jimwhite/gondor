@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/gondor.iml" filepath="$PROJECT_DIR$/gondor.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Groosh/svn/org.codehaus.groovy.groosh/groosh.iml" filepath="$PROJECT_DIR$/../Groosh/svn/org.codehaus.groovy.groosh/groosh.iml" />
     </modules>
   </component>
 </project>
