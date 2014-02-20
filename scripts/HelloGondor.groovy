@@ -1,13 +1,12 @@
 import groovy.transform.Field
 
-@Field
-PrintWriter printer = new PrintWriter(System.out)
-
 // Must use this after any transformations that check ClassNode.isScriptBody
 // if you are changing the name of the run script method in the BaseScript annotation.
 @groovy.transform.BaseScript org.ifcx.gondor.SessionScript thisScript
 
 
+@Field
+PrintWriter printer = new PrintWriter(System.out)
 
 //
 //import groovy.transform.BaseScript
