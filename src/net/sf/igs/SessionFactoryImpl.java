@@ -16,14 +16,15 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-import net.sf.igs.drmaa.util.ClearableSessionFactory;
+//import net.sf.igs.drmaa.util.ClearableSessionFactory;
 
 import org.ggf.drmaa.Session;
+import org.ggf.drmaa.SessionFactory;
 
 /**
- * This is the implementation of {@link ClearableSessionFactory}.
+ * This is the implementation of {@link SessionFactory}.
  */
-public class SessionFactoryImpl extends ClearableSessionFactory {
+public class SessionFactoryImpl extends SessionFactory {
 //   private Object lock = new Object ();
 //   private Session session = null;
    

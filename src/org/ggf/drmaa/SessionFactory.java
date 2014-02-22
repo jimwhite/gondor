@@ -63,11 +63,12 @@ import java.util.Properties;
  * @version 1.0
  */
 public abstract class SessionFactory {
-    /**
-     * Right now, only one SessionFactory can exist at a time.  This is that
-     * session factory.
-     */
-    private static SessionFactory thisFactory = null;
+//    /**
+//     * Right now, only one SessionFactory can exist at a time.  This is that
+//     * session factory.
+//     */
+//    private static SessionFactory thisFactory = null;
+
     /**
      * The name of the property used to find the Session implementation
      * class name.
@@ -95,16 +96,18 @@ public abstract class SessionFactory {
      * be found or instantiated
      */
     public static SessionFactory getFactory() {
-        synchronized (SessionFactory.class) {
-            if (thisFactory == null) {
-                NewFactoryAction action = new NewFactoryAction();
-                
-                thisFactory =
-                        (SessionFactory)AccessController.doPrivileged(action);
-            }
-        }
-        
-        return thisFactory;
+//        synchronized (SessionFactory.class) {
+//            if (thisFactory == null) {
+//                NewFactoryAction action = new NewFactoryAction();
+//
+//                thisFactory =
+//                        (SessionFactory)AccessController.doPrivileged(action);
+//            }
+//        }
+//
+//        return thisFactory;
+
+        return (SessionFactory)AccessController.doPrivileged(new NewFactoryAction());
     }
     
     /**

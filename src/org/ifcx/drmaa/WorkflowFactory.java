@@ -42,56 +42,56 @@ import java.security.PrivilegedAction;
 import java.util.Properties;
 
 /**
- * This class is used to retrieve a Session instance tailored to the DRM and
+ * This class is used to retrieve a Workflow instance tailored to the DRM and
  * DRMAA implementation in use.  The factory will use the
- * org.ggf.drmaa.SessionFactory property to discover the DRM-specific Session
+ * org.ifcx.drmaa.WorkflowFactory property to discover the DRM-specific Workflow
  * implementation class.
  *
  * <p>Example:</p>
  *
  * <pre>public static void main(String[] args) throws Exception {
- *   SessionFactory factory = SessionFactory.getFactory();
- *   Session session = factory.getWorkflow();
+ *   WorkflowFactory factory = WorkflowFactory.getFactory();
+ *   Workflow workflow = factory.getWorkflow();
  *
- *   session.init(&quot;&quot;);
- *   session.exit();
+ *   workflow.init(&quot;&quot;);
+ *   workflow.exit();
  * }
  * </pre>
  * @author dan.templeton@sun.com
- * @see org.ggf.drmaa.Session
+ * @see org.ifcx.drmaa.Workflow
  * @since 0.5
  * @version 1.0
  */
 public abstract class WorkflowFactory {
     /**
-     * Right now, only one SessionFactory can exist at a time.  This is that
-     * session factory.
+     * Right now, only one WorkflowFactory can exist at a time.  This is that
+     * workflow factory.
      */
     private static WorkflowFactory thisFactory = null;
     /**
-     * The name of the property used to find the Session implementation
+     * The name of the property used to find the Workflow implementation
      * class name.
      */
     private static final String WORKFLOW_FACTORY_PROPERTY =
             "org.ifcx.drmaa.WorkflowFactory";
 
     /**
-     * Gets a Session instance appropriate for the DRM in use.
-     * @return a Session instance appropriate for the DRM in use
+     * Gets a Workflow instance appropriate for the DRM in use.
+     * @return a Workflow instance appropriate for the DRM in use
      */
     public abstract Workflow getWorkflow();
 
     /**
-     * Gets a SessionFactory instance appropriate for the DRM in use.  This
-     * method uses the org.ggf.drmaa.SessionFactory property to find
+     * Gets a WorkflowFactory instance appropriate for the DRM in use.  This
+     * method uses the org.ifcx.drmaa.WorkflowFactory property to find
      * the appropriate class.  It looks first in the system properties.  If the
      * property is not present, the method looks in
      * $java.home/lib/drmaa.properties.  If the property still isn't found, the
      * method will search the classpath for a
-     * META-INF/services/org.ggf.drmaa.SessionFactory resource.  If the
+     * META-INF/services/org.ifcx.drmaa.WorkflowFactory resource.  If the
      * property still has not been found, the method throws an Error.
-     * @return a SessionFactory instance appropriate for the DRM in use
-     * @throws Error if an appropriate SessionFactory implementation could not
+     * @return a WorkflowFactory instance appropriate for the DRM in use
+     * @throws Error if an appropriate WorkflowFactory implementation could not
      * be found or instantiated
      */
     public static WorkflowFactory getFactory() {
@@ -108,16 +108,16 @@ public abstract class WorkflowFactory {
     }
 
     /**
-     * Creates a SessionFactory object appropriate for the DRM in use.  This
-     * method uses the org.ggf.drmaa.SessionFactory property to find
+     * Creates a WorkflowFactory object appropriate for the DRM in use.  This
+     * method uses the org.ifcx.drmaa.WorkflowFactory property to find
      * the appropriate class.  It looks first in the system properties.  If the
      * property is not present, the method looks in
      * $java.home/lib/drmaa.properties.  If the property still isn't found, the
      * method will search the classpath for a
-     * META-INF/services/org.ggf.drmaa.SessionFactory resource.  If the
+     * META-INF/services/org.ifcx.drmaa.WorkflowFactory resource.  If the
      * property still has not been found, the method throws an Error.
-     * @return a DRMAASession object appropriate for the DRM in use
-     * @throws ConfigurationError if an appropriate SessionFactory
+     * @return a DRMAA Workflow object appropriate for the DRM in use
+     * @throws ConfigurationError if an appropriate WorkflowFactory
      * implementation could not be found or instantiated
      */
     private static WorkflowFactory newFactory() throws ConfigurationError {
@@ -254,7 +254,7 @@ public abstract class WorkflowFactory {
     /**
      * Error used to indicate trouble loading the needed classes.  Note that
      * this class is private, meaning that it is only catchable as Error outside
-     * of the SessionFactory class.
+     * of the WorkflowFactory class.
      */
     private static class ConfigurationError extends Error {
         /**
