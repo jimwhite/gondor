@@ -30,7 +30,7 @@ public class WorkflowImpl implements Workflow {
 
     @Override
     void deleteJobTemplate(JobTemplate jt) throws DrmaaException {
-
+        jobTemplateMap.remove(jt)
     }
 
     @Override

@@ -161,7 +161,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     
     public void setArgs(List args) throws DrmaaException {
         if (args != null) {
-            this.args = new ArrayList(args);
+            this.args = Collections.unmodifiableList(new ArrayList(args));
         } else {
             this.args = null;
         }
@@ -170,13 +170,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     }
     
     public List getArgs() throws DrmaaException {
-        List returnValue = null;
-
-        if (args != null) {
-            returnValue = Collections.unmodifiableList(args);
-        }
-
-        return returnValue;
+        return args;
     }
     
     public void setJobSubmissionState(int state) throws DrmaaException {
@@ -194,7 +188,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     
     public void setJobEnvironment(Map env) throws DrmaaException {
         if (env != null) {
-            this.jobEnvironment = new HashMap(env);
+            this.jobEnvironment = Collections.unmodifiableMap(new HashMap(env));
         } else {
             this.jobEnvironment = null;
         }
@@ -203,13 +197,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     }
     
     public Map getJobEnvironment() throws DrmaaException {
-        Map returnValue = null;
-
-        if (jobEnvironment != null) {
-            returnValue = Collections.unmodifiableMap(jobEnvironment);
-        }
-
-        return returnValue;
+        return jobEnvironment;
     }
     
     public void setWorkingDirectory(String wd) throws DrmaaException {
@@ -249,7 +237,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     
     public void setEmail(Set email) throws DrmaaException {
         if (email != null) {
-            this.email = new HashSet(email);
+            this.email = Collections.unmodifiableSet(new HashSet(email));
         } else {
             this.email = null;
         }
@@ -258,13 +246,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     }
     
     public Set getEmail() throws DrmaaException {
-        Set returnValue = null;
-
-        if (email != null) {
-            returnValue = Collections.unmodifiableSet(email);
-        }
-
-        return returnValue;
+        return email;
     }
     
     public void setBlockEmail(boolean blockEmail) throws DrmaaException {
@@ -282,7 +264,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
                 throw new IllegalArgumentException("Start time is in the past.");
             }
             
-            this.startTime = startTime;
+            this.startTime = (PartialTimestamp) startTime.clone();
         } else {
             startTime = null;
         }
@@ -292,7 +274,7 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     
     public PartialTimestamp getStartTime() throws DrmaaException {
         if (startTime != null) {
-            return (PartialTimestamp)startTime.clone();
+            return (PartialTimestamp) startTime.clone();
         } else {
             return null;
         }
@@ -413,9 +395,10 @@ public class SimpleJobTemplate implements JobTemplate, Serializable {
     
     public Set getAttributeNames() throws DrmaaException {
         if (allPropertyNames == null) {
-            allPropertyNames = new HashSet();
-            addRequiredNames(allPropertyNames);
-            allPropertyNames.addAll(getOptionalAttributeNames());
+            Set propertyNames = new HashSet();
+            addRequiredNames(propertyNames);
+            propertyNames.addAll(getOptionalAttributeNames());
+            allPropertyNames = Collections.unmodifiableSet(propertyNames);
         }
         
         return allPropertyNames;

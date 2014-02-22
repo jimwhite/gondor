@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.FileTransferMode
-import org.ggf.drmaa.InternalException
 import org.ggf.drmaa.InvalidAttributeValueException
 import org.ggf.drmaa.JobTemplate
 import org.ggf.drmaa.PartialTimestamp
@@ -86,21 +85,22 @@ import org.ggf.drmaa.UnsupportedAttributeException
 @AutoClone
 public class JobTemplateImpl implements JobTemplate
 {
-    private static final String REMOTE_COMMAND = "drmaa_remote_command";
-    private static final String INPUT_PARAMETERS = "drmaa_v_argv";
-    private static final String JOB_SUBMISSION_STATE = "drmaa_js_state";
-    private static final String JOB_ENVIRONMENT = "drmaa_v_env";
-    private static final String WORKING_DIRECTORY = "drmaa_wd";
-    private static final String JOB_CATEGORY = "drmaa_job_category";
-    private static final String NATIVE_SPECIFICATION = "drmaa_native_specification";
-    private static final String EMAIL_ADDRESS = "drmaa_v_email";
-    private static final String BLOCK_EMAIL = "drmaa_block_email";
-    private static final String START_TIME = "drmaa_start_time";
-    private static final String JOB_NAME = "drmaa_job_name";
-    private static final String INPUT_PATH = "drmaa_input_path";
-    private static final String OUTPUT_PATH = "drmaa_output_path";
-    private static final String ERROR_PATH = "drmaa_error_path";
-    private static final String JOIN_FILES = "drmaa_join_files";
+
+    private static final String REMOTE_COMMAND = "remoteCommand";
+    private static final String INPUT_PARAMETERS = "args";
+    private static final String JOB_SUBMISSION_STATE = "jobSubmissionState";
+    private static final String JOB_ENVIRONMENT = "jobEnvironment";
+    private static final String WORKING_DIRECTORY = "workingDirectory";
+    private static final String JOB_CATEGORY = "jobCategory";
+    private static final String NATIVE_SPECIFICATION = "nativeSpecification";
+    private static final String EMAIL_ADDRESS = "email";
+    private static final String BLOCK_EMAIL = "blockEmail";
+    private static final String START_TIME = "startTime";
+    private static final String JOB_NAME = "jobName";
+    private static final String INPUT_PATH = "inputPath";
+    private static final String OUTPUT_PATH = "outputPath";
+    private static final String ERROR_PATH = "errorPath";
+    private static final String JOIN_FILES = "joinFiles";
     private static final String TRANSFER_FILES = "drmaa_transfer_files";
     /* Not supported
     private static final String DEADLINE_TIME = "drmaa_deadline_time"
@@ -111,17 +111,13 @@ public class JobTemplateImpl implements JobTemplate
     */
     private static final String HOLD_STRING = "drmaa_hold";
     private static final String ACTIVE_STRING = "drmaa_active";
-    private static final String BLOCK_EMAIL_TRUE_STRING = "1";
-    private static final String BLOCK_EMAIL_FALSE_STRING = "0";
-    private static final String JOIN_FILES_TRUE_STRING = "y";
-    private static final String JOIN_FILES_FALSE_STRING = "n";
 
     private static PartialTimestampFormat ptf = new PartialTimestampFormat();
 
     // Job instance data
     private List<String> args = [];
     private String remoteCommand;
-    private String category;
+    private String jobCategory;
     private String nativeSpecification;
     private Set<String> email = new HashSet<String>();
     private String transferMode = new FileTransferMode();
@@ -129,10 +125,10 @@ public class JobTemplateImpl implements JobTemplate
     private String inputPath;
     private String outputPath;
     private String errorPath;
-    private String submissionStateString = ACTIVE_STRING;
-    private Object blockEmail;
+    private String jobSubmissionState = ACTIVE_STRING;
+    private boolean blockEmail;
     private PartialTimestamp startTime;
-    private Map<String, String> environment = Collections.unmodifiableMap([:]);
+    private Map<String, String> jobEnvironment = Collections.unmodifiableMap([:]);
     private boolean joinFiles;
 
     // The one attribute not included in this object's value for equals & hashcode.
@@ -240,7 +236,7 @@ public class JobTemplateImpl implements JobTemplate
             throw new InvalidAttributeValueException("jobSubmissionState attribute is invalid");
         }
 
-        this.submissionStateString = stateString;
+        this.jobSubmissionState = stateString;
     }
 
     /**
@@ -251,7 +247,7 @@ public class JobTemplateImpl implements JobTemplate
      * @see #setJobSubmissionState(int)
      */
     public int getJobSubmissionState() throws DrmaaException {
-        submissionStateString
+        jobSubmissionState
     }
 
     /**
@@ -262,7 +258,7 @@ public class JobTemplateImpl implements JobTemplate
      * @throws DrmaaException {@inheritDoc}
      */
     public void setJobEnvironment(Map env) throws DrmaaException {
-        environment = Collections.unmodifiableMap(env.collectEntries { k, v -> [k.toString(), v.toString()] });
+        jobEnvironment = Collections.unmodifiableMap(env.collectEntries { k, v -> [k.toString(), v.toString()] });
     }
 
     /**
@@ -273,7 +269,7 @@ public class JobTemplateImpl implements JobTemplate
      * @see #setJobEnvironment(Map)
      */
     public Map getJobEnvironment() throws DrmaaException {
-        environment
+        jobEnvironment
     }
 
     /**
@@ -326,7 +322,7 @@ public class JobTemplateImpl implements JobTemplate
      * @throws DrmaaException {@inheritDoc}
      */
     public void setJobCategory(String category) throws DrmaaException {
-        this.category = category;
+        this.jobCategory = category;
     }
 
     /**
@@ -337,7 +333,7 @@ public class JobTemplateImpl implements JobTemplate
      * @see #setJobCategory(String)
      */
     public String getJobCategory() throws DrmaaException {
-        return category;
+        return jobCategory;
     }
 
     /**
@@ -394,11 +390,7 @@ public class JobTemplateImpl implements JobTemplate
      * @throws DrmaaException {@inheritDoc}
      */
     public void setBlockEmail(boolean blockEmail) throws DrmaaException {
-        if (blockEmail) {
-            this.blockEmail = BLOCK_EMAIL_TRUE_STRING;
-        } else {
-            this.blockEmail = BLOCK_EMAIL_FALSE_STRING;
-        }
+        this.blockEmail = blockEmail
     }
 
     /**
@@ -409,11 +401,7 @@ public class JobTemplateImpl implements JobTemplate
      * @see #setBlockEmail(boolean)
      */
     public boolean getBlockEmail() throws DrmaaException {
-        if (blockEmail != null) {
-            return blockEmail.equals(BLOCK_EMAIL_TRUE_STRING);
-        } else {
-            return false;
-        }
+        blockEmail
     }
 
     /**
@@ -427,7 +415,7 @@ public class JobTemplateImpl implements JobTemplate
         if (startTime.getTimeInMillis() < System.currentTimeMillis()) {
             throw new IllegalArgumentException("Start time is in the past.");
         }
-        this.startTime = startTime;
+        this.startTime = (PartialTimestamp) startTime.clone();
     }
 
     /**
@@ -438,7 +426,7 @@ public class JobTemplateImpl implements JobTemplate
      * @see #setStartTime(org.ggf.drmaa.PartialTimestamp)
      */
     public PartialTimestamp getStartTime() throws DrmaaException {
-        return startTime;
+        (PartialTimestamp) startTime.clone()
     }
 
     /**
@@ -464,7 +452,7 @@ public class JobTemplateImpl implements JobTemplate
      * @see #setJobName(String)
      */
     public String getJobName() throws DrmaaException {
-        return jobName;
+        jobName
     }
 
     /**
