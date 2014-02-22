@@ -12,8 +12,9 @@ public class WorkflowImpl implements Workflow {
     private static final Version VERSION = new Version(0, 1)
 
     String contact = ""
+    String workflowName = "gondor_default_workflow"
 
-    File jobTemplatesDir = new File("jobs")
+    File jobTemplatesDir
     Map<JobTemplate, JobTemplate> jobTemplateMap = [:]
     Map<JobTemplate, File> jobTemplateFiles = [:]
 
@@ -23,10 +24,29 @@ public class WorkflowImpl implements Workflow {
     void init(String contact) throws DrmaaException {
         this.contact = contact
 
-        if (!jobTemplatesDir.exists() && (!jobTemplatesDir.isDirectory() || !jobTemplatesDir.mkdirs())) {
+        jobTemplatesDir = new File(workflowName + ".jobs")
+
+        if (!jobTemplatesDir.exists() && !jobTemplatesDir.mkdirs()) {
             throw new InternalException("Can't create directory $jobTemplatesDir for job templates.")
         }
+
+        if (!jobTemplatesDir.isDirectory()) {
+            throw new InternalException("The file $jobTemplatesDir exists where we want to put the job templates dir.")
+        }
     }
+
+
+    @Override
+    String getWorkflowName() {
+        this.workflowName
+    }
+
+    @Override
+    void init(String contact, String workflowName) {
+        this.workflowName = workflowName
+        init(contact)
+    }
+
 
     @Override
     void exit() throws DrmaaException {
@@ -56,9 +76,10 @@ public class WorkflowImpl implements Workflow {
 
         if (jt1.jobName) {
             jobTemplateFile = new File(jobTemplatesDir, jt1.jobName + ".job")
+            jobTemplateFile.createNewFile()
         } else {
 //            if (!jobName) setJobName(remoteCommand.replaceAll(/[^A-Za-z_]/, '_'))
-            jobTemplateFile = File.createTempFile("pre_", ".job", jobTemplatesDir)
+            jobTemplateFile = File.createTempFile(jt1.remoteCommand.replaceAll(/[^A-Za-z_]/, '_') + "_", ".job", jobTemplatesDir)
             jt1.jobName = jobTemplateFile.name - ~/\.job$/
         }
 
