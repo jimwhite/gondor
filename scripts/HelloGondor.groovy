@@ -1,29 +1,13 @@
-import groovy.transform.Field
 
-// Must use this after any transformations that check ClassNode.isScriptBody
-// if you are changing the name of the run script method in the BaseScript annotation.
-@groovy.transform.BaseScript org.ifcx.gondor.SessionScript thisScript
+@groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
 
+def jt = thisScript.workflow.createJobTemplate()
 
-@Field
-PrintWriter printer = new PrintWriter(System.out)
+jt.remoteCommand = "/bin/ls"
 
-//
-//import groovy.transform.BaseScript
-//import org.ifcx.gondor.GondorScript
-//@BaseScript GondorScript thisScript
+[1, 2, 8, 9, 10, 11, 19, 20, 21, 98, 99, 100, 101, 102, 998, 999, 1000, 1001].each {
+    def jid = thisScript.workflow.runBulkJobs(jt, 1, it, 3)
 
-def a = 123
+    println "1 $it ${jid.size()} $jid"
 
-if (this instanceof GroovyInterceptable) println("We want to GI");
-
-println "yo"
-
-println thisScript
-println this
-println session
-println a
-
-PrintWriter getOut() {  printer }
-
-printer.flush()
+}

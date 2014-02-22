@@ -47,6 +47,40 @@ abstract public class SecuredScript extends Script {
                     System.err.println("write fs : " + file);
                     super.checkWrite(file);
                 }
+
+                @Override
+                public void checkExec(String cmd) {
+                    System.err.println("exec : " + cmd);
+                    super.checkExec(cmd);
+                }
+
+                @Override
+                public void checkLink(String lib) {
+                    System.err.println("linked : " + lib);
+                    super.checkLink(lib);
+                }
+
+                @Override
+                public void checkDelete(String file) {
+                    System.err.println("delete : " + file);
+                    super.checkDelete(file);
+                }
+
+                @Override
+                public void checkPropertiesAccess() {
+                    System.err.println("accessed all properties");
+                    super.checkPropertiesAccess();
+                }
+
+                @Override
+                public void checkPropertyAccess(String key) {
+                    // Interesting factoid about Apple's JDK.  They hacked ProcessImpl.getEncodedBytes and did it
+                    // wrong.  It does getProperty('file.encoding') on *every* call and doesn't deal at all with
+                    // access controller.  The correct implementation of that code is in Charset.defaultCharset().
+
+                    System.err.println("access property : " + key);
+                    super.checkPropertyAccess(key);
+                }
             });
 
             return runScript();

@@ -6,6 +6,8 @@ import org.ggf.drmaa.SessionFactory
 public abstract class SessionScript extends GondorScript {
     Session session
 
+    int something = 42
+
     def preRun() {
         session = SessionFactory.getFactory().getSession()
         println "prepared"
@@ -22,17 +24,17 @@ public abstract class SessionScript extends GondorScript {
         postRun()
     }
 
-    Object getProperty(String name) {
-        try {
-            super.getProperty(name)
-        } catch (MissingPropertyException e) {
-            if (!name.startsWith("get")) {
-                invokeMethod("get" + name[0].toUpperCase() + name.substring(1), [])
-            } else {
-                throw e
-            }
-        }
-    }
+//    Object getProperty(String name) {
+//        try {
+//            super.getProperty(name)
+//        } catch (MissingPropertyException e) {
+//            if (!name.startsWith("get")) {
+//                invokeMethod("get" + name[0].toUpperCase() + name.substring(1), [])
+//            } else {
+//                throw e
+//            }
+//        }
+//    }
 
     abstract Object runScript();
 }

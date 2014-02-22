@@ -1,6 +1,5 @@
-//Read a text file and write it to stdout
+//@groovy.lang.GrabConfig(systemClassLoader = true)
 @Grab(group='org.codehaus.groovy.modules.groosh', module='groovy-groosh', version='0.3.5')
-@groovy.lang.GrabConfig(systemClassLoader = true)
 
 @groovy.transform.BaseScript org.ifcx.gondor.SecuredScript thisScript
 
@@ -12,13 +11,16 @@ Groosh.withGroosh(this)
 
 echo("hello world") >> stdout
 echo("hello world") >> new File('baz.txt')
+
+println (new File(System.getProperty("user.home")).listFiles())
+
 cat('HelloGroosh.groovy') >> new File('foo.txt')
 (tr('a-z', 'A-Z') << new File('../README') | sort()) >> new File('bar.txt')
 //(ls() | tr('a-z', 'A-Z')) >> new File('zax.txt')
 //println new File('zax.txt').text
 
 //def sink = StringStreams.stringSink()
-(GrooshProcess) (ls() | tr('a-z', 'A-Z')).eachLine { println it }
+(ls() | tr('a-z', 'A-Z')).eachLine { println it }
 //println sink.toString().length()
 //println sink
 

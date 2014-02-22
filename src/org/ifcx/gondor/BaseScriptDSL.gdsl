@@ -1,0 +1,12 @@
+package org.ifcx.gondor
+
+//contributor(context(scope:scriptScope())) {
+////    if (classType?.fields?.find { it.hasAnnotation("groovy.transform.BaseScript") }) {
+////        findClass(name:"org.ifcx.gondor.SessionScript")?.methods.each { add it }
+////    }
+//
+////    if (classType?.fields?.find { it.hasAnnotation("groovy.transform.BaseScript") }) {
+//        findClass(name:"org.ifcx.gondor.SessionScript")?.methods.each { method name:it.name, type:it.returnType.name }
+////    }
+//
+//}
