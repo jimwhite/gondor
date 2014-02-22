@@ -81,7 +81,8 @@ import org.ggf.drmaa.UnsupportedAttributeException
  * @see org.ggf.drmaa.JobTemplate
  * @see org.ggf.drmaa.Session
  */
-@EqualsAndHashCode(excludes = ['jobName'])
+
+@EqualsAndHashCode(includeFields = true)
 @AutoClone
 public class JobTemplateImpl implements JobTemplate
 {
@@ -109,8 +110,6 @@ public class JobTemplateImpl implements JobTemplate
     private static final String HARD_RUN_DURATION_LIMIT = "drmaa_run_duration_hlimit"
     private static final String SOFT_RUN_DURATION_LIMIT = "drmaa_run_duration_slimit"
     */
-    private static final String HOLD_STRING = "drmaa_hold";
-    private static final String ACTIVE_STRING = "drmaa_active";
 
     private static PartialTimestampFormat ptf = new PartialTimestampFormat();
 
@@ -118,21 +117,19 @@ public class JobTemplateImpl implements JobTemplate
     private List<String> args = [];
     private String remoteCommand;
     private String jobCategory;
+    private String jobName;
     private String nativeSpecification;
     private Set<String> email = new HashSet<String>();
+    private boolean blockEmail;
     private String transferMode = new FileTransferMode();
     private String workingDirectory;
     private String inputPath;
     private String outputPath;
     private String errorPath;
-    private String jobSubmissionState = ACTIVE_STRING;
-    private boolean blockEmail;
+    private boolean joinFiles;
+    private int jobSubmissionState = ACTIVE_STATE;
     private PartialTimestamp startTime;
     private Map<String, String> jobEnvironment = Collections.unmodifiableMap([:]);
-    private boolean joinFiles;
-
-    // The one attribute not included in this object's value for equals & hashcode.
-    private String jobName;
 
     private static final List<String> ATTRIBUTES = [REMOTE_COMMAND, INPUT_PARAMETERS,
             JOB_SUBMISSION_STATE, JOB_ENVIRONMENT,
@@ -174,8 +171,6 @@ public class JobTemplateImpl implements JobTemplate
      */
     public void setRemoteCommand(String remoteCommand) throws DrmaaException {
         this.remoteCommand = remoteCommand;
-
-        if (!jobName) setJobName(remoteCommand.replaceAll(/[^A-Za-z_]/, '_'))
     }
 
     /**
@@ -226,17 +221,11 @@ public class JobTemplateImpl implements JobTemplate
      * @throws DrmaaException {@inheritDoc}
      */
     public void setJobSubmissionState(int state) throws DrmaaException {
-        String stateString;
-
-        if (state == HOLD_STATE) {
-            stateString = HOLD_STRING;
-        } else if (state == ACTIVE_STATE) {
-            stateString = ACTIVE_STRING;
+        if (state in [HOLD_STATE, ACTIVE_STATE]) {
+            this.jobSubmissionState = state
         } else {
             throw new InvalidAttributeValueException("jobSubmissionState attribute is invalid");
         }
-
-        this.jobSubmissionState = stateString;
     }
 
     /**
@@ -426,7 +415,7 @@ public class JobTemplateImpl implements JobTemplate
      * @see #setStartTime(org.ggf.drmaa.PartialTimestamp)
      */
     public PartialTimestamp getStartTime() throws DrmaaException {
-        (PartialTimestamp) startTime.clone()
+        (PartialTimestamp) startTime?.clone()
     }
 
     /**
@@ -438,7 +427,7 @@ public class JobTemplateImpl implements JobTemplate
      */
     public void setJobName(String name) throws DrmaaException {
         // TODO: Need a test case to make sure this regular expression works
-        if (!name.matches("[A-Za-z0-9_]+")) {
+        if (!name.matches("[A-Za-z0-9_.]+")) {
             throw new InvalidAttributeValueException("Illegal characters in the job name.");
         }
         this.jobName = name;

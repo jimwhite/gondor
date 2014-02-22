@@ -6,5 +6,4 @@ import org.ifcx.drmaa.WorkflowFactory
 public abstract class WorkflowScript extends GondorScript {
     Workflow workflow = WorkflowFactory.getFactory().getWorkflow()
 
-
 }

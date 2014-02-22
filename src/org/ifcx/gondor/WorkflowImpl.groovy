@@ -1,6 +1,8 @@
 package org.ifcx.gondor
 
 import org.ggf.drmaa.DrmaaException
+import org.ggf.drmaa.InternalException
+import org.ggf.drmaa.InvalidJobTemplateException
 import org.ggf.drmaa.JobInfo
 import org.ggf.drmaa.JobTemplate
 import org.ggf.drmaa.Version
@@ -11,11 +13,19 @@ public class WorkflowImpl implements Workflow {
 
     String contact = ""
 
-    Map<JobTemplate, JobTemplate> jobTemplateMap = [:].withDefault { it.clone() }
+    File jobTemplatesDir = new File("jobs")
+    Map<JobTemplate, JobTemplate> jobTemplateMap = [:]
+    Map<JobTemplate, File> jobTemplateFiles = [:]
+
+    int job_number = 0
 
     @Override
     void init(String contact) throws DrmaaException {
         this.contact = contact
+
+        if (!jobTemplatesDir.exists() && (!jobTemplatesDir.isDirectory() || !jobTemplatesDir.mkdirs())) {
+            throw new InternalException("Can't create directory $jobTemplatesDir for job templates.")
+        }
     }
 
     @Override
@@ -30,22 +40,52 @@ public class WorkflowImpl implements Workflow {
 
     @Override
     void deleteJobTemplate(JobTemplate jt) throws DrmaaException {
-        jobTemplateMap.remove(jt)
+//        jobTemplateMap.remove(jt)
+    }
+
+    File getJobTemplateFile(JobTemplate jt0) {
+        if (jobTemplateFiles.containsKey(jt0)) { return jobTemplateFiles[jt0] }
+
+        if (jobTemplateMap.values().find { it.jobName.equalsIgnoreCase(jt0.jobName) }) {
+            throw new InvalidJobTemplateException("Job name ${jt0.jobName} used in more than one job template but they are not equivalent.")
+        }
+
+        JobTemplate jt1 = (JobTemplate) jt0.clone()
+
+        File jobTemplateFile
+
+        if (jt1.jobName) {
+            jobTemplateFile = new File(jobTemplatesDir, jt1.jobName + ".job")
+        } else {
+//            if (!jobName) setJobName(remoteCommand.replaceAll(/[^A-Za-z_]/, '_'))
+            jobTemplateFile = File.createTempFile("pre_", ".job", jobTemplatesDir)
+            jt1.jobName = jobTemplateFile.name - ~/\.job$/
+        }
+
+        jobTemplateMap[(JobTemplate) jt0.clone()] = jt1
+        jobTemplateFiles[jt1] = jobTemplateFile
+
+        jobTemplateFile
+    }
+
+    String nextJobId(String jobName) {
+        jobName + String.format("_%04d", ++job_number)
     }
 
     @Override
     String runJob(JobTemplate jt) throws DrmaaException {
-        String jobName = jt.jobName
-        JobTemplate jobTemplate = jobTemplateMap[jt] = jobTemplateMap[jt]
-        jobName
+        getJobTemplateFile(jt)
+        def jobId = nextJobId(jobTemplateMap[jt].jobName)
+        jobId
     }
 
     @Override
     List runBulkJobs(JobTemplate jt, int start, int end, int incr) throws DrmaaException {
-        String jobName = jt.jobName
-        JobTemplate jobTemplate = jobTemplateMap[jt] = jobTemplateMap[jt]
+        getJobTemplateFile(jt)
+        String jobName = jobTemplateMap[jt].jobName
         if (incr > end - start) incr = Math.max(end - start, 1)
-        def jobIds = (start..end).step(incr).collect { jobName + String.format("%0${Math.round(Math.log10(end)) + 1}d", it) }
+//        def jobIds = (start..end).step(incr).collect { jobName + String.format("_%0${Math.round(Math.log10(end)) + 1}d", ++job_number) }
+        def jobIds = (start..end).step(incr).collect { nextJobId(jobName) }
         assert jobIds.size() == Math.floor(((end - start) / incr) + 1)
         jobIds
     }
