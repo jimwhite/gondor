@@ -69,7 +69,7 @@ public class WorkflowImpl implements Workflow {
     }
 
     String nextJobTemplateName(String jobTemplateName) {
-        String.format("+${jobTemplateName}_%04d", ++job_template_number)
+        String.format("${jobTemplateName}_%04d", ++job_template_number)
     }
 
     File getJobTemplateFile(JobTemplate jt0) {

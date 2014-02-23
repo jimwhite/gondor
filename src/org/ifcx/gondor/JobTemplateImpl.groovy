@@ -427,10 +427,14 @@ public class JobTemplateImpl implements JobTemplate
      * @throws DrmaaException {@inheritDoc}
      */
     public void setJobName(String name) throws DrmaaException {
-        // TODO: Need a test case to make sure this regular expression works
-        if (!name.matches("[A-Za-z0-9_.]+")) {
+        if (!name.matches(/[A-Za-z0-9_.]+/)) {
             throw new InvalidAttributeValueException("Illegal characters in the job name.");
         }
+
+        if (name.startsWith('_')) {
+            throw new InvalidAttributeValueException("Job name can't start with '_', it is reserved for generated job names.");
+        }
+
         this.jobName = name;
     }
 
@@ -441,10 +445,12 @@ public class JobTemplateImpl implements JobTemplate
      * @throws DrmaaException {@inheritDoc}
      */
     void setGeneratedJobName(String name) throws DrmaaException {
-        // TODO: Need a test case to make sure this regular expression works
-        if (!name.matches(/^\+[A-Za-z0-9_.]+/)) {
+        if (!name.matches(/^[A-Za-z0-9_.]+/)) {
             throw new InvalidAttributeValueException("Illegal characters in the job name.");
         }
+
+        if (!name.startsWith('_')) name = '_' + name
+
         this.jobName = name;
     }
 
