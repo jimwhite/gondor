@@ -19,6 +19,7 @@ public class WorkflowImpl implements Workflow {
     Map<JobTemplate, File> jobTemplateFiles = [:]
 
     int job_number = 0
+    int job_template_number = 0
 
     @Override
     void init(String contact) throws DrmaaException {
@@ -63,49 +64,52 @@ public class WorkflowImpl implements Workflow {
 //        jobTemplateMap.remove(jt)
     }
 
+    String nextJobId(String jobName) {
+        jobName + String.format("_%04d", ++job_number)
+    }
+
+    String nextJobTemplateName(String jobTemplateName) {
+        String.format("+${jobTemplateName}_%04d", ++job_template_number)
+    }
+
     File getJobTemplateFile(JobTemplate jt0) {
-        if (jobTemplateFiles.containsKey(jt0)) { return jobTemplateFiles[jt0] }
+        if (jobTemplateMap.containsKey(jt0)) {
+            return jobTemplateFiles[jobTemplateMap[jt0]]
+        }
 
         if (jobTemplateMap.values().find { it.jobName.equalsIgnoreCase(jt0.jobName) }) {
             throw new InvalidJobTemplateException("Job name ${jt0.jobName} used in more than one job template but they are not equivalent.")
         }
 
-        JobTemplate jt1 = (JobTemplate) jt0.clone()
+        jt0 = (JobTemplateImpl) jt0.clone()
+        JobTemplate jt1 = (JobTemplateImpl) jt0.clone()
 
-        File jobTemplateFile
-
-        if (jt1.jobName) {
-            jobTemplateFile = new File(jobTemplatesDir, jt1.jobName + ".job")
-            jobTemplateFile.createNewFile()
-        } else {
-//            if (!jobName) setJobName(remoteCommand.replaceAll(/[^A-Za-z_]/, '_'))
-            jobTemplateFile = File.createTempFile(jt1.remoteCommand.replaceAll(/[^A-Za-z_]/, '_') + "_", ".job", jobTemplatesDir)
-            jt1.jobName = jobTemplateFile.name - ~/\.job$/
+        if (!jt1.jobName) {
+            jt1.setGeneratedJobName(nextJobTemplateName(jt1.remoteCommand.replaceAll(/[^A-Za-z_]/, '_')))
         }
 
-        jobTemplateMap[(JobTemplate) jt0.clone()] = jt1
+        File jobTemplateFile = new File(jobTemplatesDir, jt1.jobName + ".job")
+
+        jobTemplateFile.createNewFile()
+
+        jobTemplateMap[jt0] = jt1
         jobTemplateFiles[jt1] = jobTemplateFile
-
-        jobTemplateFile
-    }
-
-    String nextJobId(String jobName) {
-        jobName + String.format("_%04d", ++job_number)
     }
 
     @Override
     String runJob(JobTemplate jt) throws DrmaaException {
-        getJobTemplateFile(jt)
-        def jobId = nextJobId(jobTemplateMap[jt].jobName)
+        File jobTemplateFile = getJobTemplateFile(jt)
+        jt = jobTemplateMap[jt]
+        def jobId = nextJobId(jt.jobName)
         jobId
     }
 
     @Override
     List runBulkJobs(JobTemplate jt, int start, int end, int incr) throws DrmaaException {
-        getJobTemplateFile(jt)
-        String jobName = jobTemplateMap[jt].jobName
+        File jobTemplateFile = getJobTemplateFile(jt)
+        jt = jobTemplateMap[jt]
+        String jobName = jt.jobName
         if (incr > end - start) incr = Math.max(end - start, 1)
-//        def jobIds = (start..end).step(incr).collect { jobName + String.format("_%0${Math.round(Math.log10(end)) + 1}d", ++job_number) }
         def jobIds = (start..end).step(incr).collect { nextJobId(jobName) }
         assert jobIds.size() == Math.floor(((end - start) / incr) + 1)
         jobIds
