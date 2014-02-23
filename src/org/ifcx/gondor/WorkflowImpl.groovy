@@ -2,10 +2,12 @@ package org.ifcx.gondor
 
 import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.InternalException
+import org.ggf.drmaa.InvalidJobException
 import org.ggf.drmaa.InvalidJobTemplateException
 import org.ggf.drmaa.JobInfo
 import org.ggf.drmaa.JobTemplate
 import org.ggf.drmaa.Version
+
 import org.ifcx.drmaa.Workflow
 
 public class WorkflowImpl implements Workflow {
@@ -20,6 +22,9 @@ public class WorkflowImpl implements Workflow {
 
     int job_number = 0
     int job_template_number = 0
+
+    Map<String, Job> jobs = [:]
+    Set<String> parentJobIds = []
 
     @Override
     void init(String contact) throws DrmaaException {
@@ -101,6 +106,7 @@ public class WorkflowImpl implements Workflow {
         File jobTemplateFile = getJobTemplateFile(jt)
         jt = jobTemplateMap[jt]
         def jobId = nextJobId(jt.jobName)
+        jobs[jobId] = new Job(jobId: jobId, jobTemplate: jt)
         jobId
     }
 
@@ -110,24 +116,31 @@ public class WorkflowImpl implements Workflow {
         jt = jobTemplateMap[jt]
         String jobName = jt.jobName
         if (incr > end - start) incr = Math.max(end - start, 1)
-        def jobIds = (start..end).step(incr).collect { nextJobId(jobName) }
+        def jobIds = (start..end).step(incr).collect {
+            String jobId = nextJobId(jobName)
+            jobs[jobId] = new Job(jobId: jobId, jobTemplate: jt)
+        }
         assert jobIds.size() == Math.floor(((end - start) / incr) + 1)
         jobIds
     }
 
     @Override
     void control(String jobId, int action) throws DrmaaException {
-       
+        throw new IllegalWorkflowOperation()
     }
 
     @Override
     void synchronize(List jobIds, long timeout, boolean dispose) throws DrmaaException {
-       
+        jobIds.each { wait(it as String, timeout) }
     }
 
     @Override
     JobInfo wait(String jobId, long timeout) throws DrmaaException {
-        return null 
+        if (!jobs.containsKey(jobId)) throw new InvalidJobException("Unknown job id '$jobId'")
+
+        parentJobIds += jobId
+
+        new JobInfoImpl(jobId: jobId)
     }
 
     @Override

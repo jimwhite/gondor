@@ -99,7 +99,7 @@ import java.util.Map;
  * @since 0.4.2
  * @version 1.0
  */
-public abstract interface JobInfo {
+public interface JobInfo {
     /**
      * Get the id of the finished job.
      * @return the job id
