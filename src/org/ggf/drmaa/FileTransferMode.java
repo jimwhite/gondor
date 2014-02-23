@@ -63,6 +63,10 @@ public class FileTransferMode implements Serializable, Cloneable {
      */
     public FileTransferMode() {
     }
+
+    protected FileTransferMode(FileTransferMode ftm) {
+        this(ftm.getInputStream(), ftm.getOutputStream(), ftm.getErrorStream());
+    }
     
     /**
      * Create a new instance with the property values preset.
@@ -157,12 +161,7 @@ public class FileTransferMode implements Serializable, Cloneable {
      * @return a copy of this FileTransferMode object
      */
     public Object clone() {
-        try {
-            return super.clone();
-        } catch (CloneNotSupportedException e) {
-            // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
-        }
+        return new FileTransferMode(this);
     }
     
     /**

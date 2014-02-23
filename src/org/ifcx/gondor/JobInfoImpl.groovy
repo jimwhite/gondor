@@ -23,23 +23,23 @@ class JobInfoImpl implements JobInfo {
     final boolean hasCoreDump
     final boolean wasAborted
 
-    @Override
-    String getJobId() { this.jobId }
-
-    @Override
-    Map getResourceUsage() { this.resourceUsage }
+//    @Override
+//    String getJobId() { this.jobId }
+//
+//    @Override
+//    Map getResourceUsage() { this.resourceUsage }
 
     @Override
     boolean hasExited() { this.hasExited }
 
-    @Override
-    int getExitStatus() { this.exitStatus }
+//    @Override
+//    int getExitStatus() { this.exitStatus }
 
     @Override
     boolean hasSignaled() { this.hasSignaled }
 
-    @Override
-    String getTerminatingSignal() { this.terminatingSignal }
+//    @Override
+//    String getTerminatingSignal() { this.terminatingSignal }
 
     @Override
     boolean hasCoreDump() { this.hasCoreDump }

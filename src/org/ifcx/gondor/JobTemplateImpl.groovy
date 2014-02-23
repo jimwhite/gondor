@@ -122,7 +122,7 @@ public class JobTemplateImpl implements JobTemplate
     private String nativeSpecification;
     private Set<String> email = new HashSet<String>();
     private boolean blockEmail;
-    private String transferMode = new FileTransferMode();
+    private FileTransferMode transferMode = new FileTransferMode();
     private String workingDirectory;
     private String inputPath;
     private String outputPath;
