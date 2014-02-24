@@ -13,6 +13,8 @@ public abstract class WorkflowScript extends GondorScript {
 
         workflow.setWorkflowName(this.getClass().name)
 
+        workflow.setTemporaryFilesPath(workflow.workflowName + '.jobs')
+
         workflow.init("")
 
         buildWorkflow()

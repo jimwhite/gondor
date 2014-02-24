@@ -13,18 +13,19 @@ import org.ifcx.drmaa.Workflow
 public class WorkflowImpl implements Workflow {
     private static final Version VERSION = new Version(0, 1)
 
-    boolean hasInitialized = false;
+    private boolean hasInitialized = false;
 
-    String contact = ""
-    String workflowName = "gondor_default_workflow"
+    private String _contact = ""
+    private String _workflowName = "gondor_default_workflow"
+    private String _temporaryFilesPath = "."
 
-    File jobTemplatesDir
+    private File temporaryFilesDir
 
-    File workingDir = new File('.')
-    File logFile
+    private File workingDir = new File('.')
+    private File logFile
 
-    int job_number = 0
-    int job_template_number = 0
+    private int job_number = 0
+    private int job_template_number = 0
 
 //    Map<JobTemplate, JobTemplate> jobTemplateMap = [:]
 //    Map<JobTemplate, File> jobTemplateFiles = [:]
@@ -34,19 +35,21 @@ public class WorkflowImpl implements Workflow {
 
     @Override
     void init(String contact) throws DrmaaException {
-        this.contact = contact
+        this._contact = contact
 
-        jobTemplatesDir = new File(workflowName + ".jobs")
+        if (!_temporaryFilesPath) setTemporaryFilesPath(_workflowName + ".jobs")
 
-        if (!jobTemplatesDir.exists() && !jobTemplatesDir.mkdirs()) {
-            throw new InternalException("Can't create directory $jobTemplatesDir for job templates.")
+        temporaryFilesDir = new File(temporaryFilesPath)
+
+        if (!temporaryFilesDir.exists() && !temporaryFilesDir.mkdirs()) {
+            throw new InternalException("Can't create directory $temporaryFilesDir for job templates.")
         }
 
-        if (!jobTemplatesDir.isDirectory()) {
-            throw new InternalException("The file $jobTemplatesDir exists where we want to put the job templates dir.")
+        if (!temporaryFilesDir.isDirectory()) {
+            throw new InternalException("The file $temporaryFilesDir exists where we want to put the job templates dir.")
         }
 
-        logFile = new File(workflowName + ".log")
+        logFile = new File(_workflowName + ".log")
 
         hasInitialized = true;
     }
@@ -54,18 +57,29 @@ public class WorkflowImpl implements Workflow {
 
     @Override
     String getWorkflowName() {
-        this.workflowName
-    }
-
-    @Override
-    void createDAGFile(File dagFile) {
-        writeDAGFile(dagFile)
+        this._workflowName
     }
 
     @Override
     void setWorkflowName(String name) {
         if (hasInitialized) throw new AlreadyActiveSessionException("Can't change workflowName after initialization.")
-        this.workflowName = name
+        this._workflowName = name
+    }
+
+    @Override
+    String getTemporaryFilesPath() {
+        _temporaryFilesPath
+    }
+
+    @Override
+    void setTemporaryFilesPath(String path) {
+        if (hasInitialized) throw new AlreadyActiveSessionException("Can't change temporaryFilesPath after initialization.")
+        _temporaryFilesPath = path
+    }
+
+    @Override
+    void createDAGFile(File dagFile) {
+        writeDAGFile(dagFile)
     }
 
     @Override
@@ -107,7 +121,7 @@ public class WorkflowImpl implements Workflow {
 
         def jobTemplateName = nextJobTemplateName(jt1.jobName ?: defaultJobTemplateName(jt1))
 
-        File jobTemplateFile = new File(jobTemplatesDir, jobTemplateName + ".job")
+        File jobTemplateFile = new File(temporaryFilesDir, jobTemplateName + ".job")
 
         writeJobTemplateFile(jt1, jobTemplateFile)
 
@@ -180,7 +194,7 @@ public class WorkflowImpl implements Workflow {
 
     @Override
     String getContact() {
-       contact
+       _contact
     }
 
     @Override
@@ -397,15 +411,6 @@ Log=${logFile}
 
         println "Generated ${jobs.size()} jobs for Condor DAG ${dag_file}"
         if (warnings) println "WARNING: ${warnings} warnings generated! See DAG file for details."
-    }
-
-    def argument_to_string(val)
-    {
-        if (val instanceof Collection) {
-            (val.collect { it instanceof File ? it.canonicalPath : it }).join(' ')
-        } else {
-            val instanceof File ? (val.isDirectory() ? val.canonicalPath + "/" : val.canonicalPath) : val
-        }
     }
 
 }

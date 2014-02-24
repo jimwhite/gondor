@@ -5,8 +5,11 @@ import org.ggf.drmaa.Session;
 import java.io.File;
 
 public interface Workflow extends Session {
-    void setWorkflowName(String name);
     String getWorkflowName();
+    void setWorkflowName(String name);
+
+    String getTemporaryFilesPath();
+    void setTemporaryFilesPath(String path);
 
     void createDAGFile(File dagFile);
 }
