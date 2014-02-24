@@ -1,7 +1,5 @@
 package org.ifcx.gondor
 
-import org.ggf.drmaa.JobTemplate
-
 /**
  * Created with IntelliJ IDEA.
  * User: jim
@@ -15,4 +13,5 @@ class Job {
     String comment
     File templateFile
     Integer procId
+    Set<String> parentIds = []
 }

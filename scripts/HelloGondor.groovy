@@ -1,4 +1,5 @@
 import org.ggf.drmaa.JobTemplate
+import org.ifcx.drmaa.Workflow
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
 
@@ -8,26 +9,29 @@ def jt = thisScript.workflow.createJobTemplate()
 
 jt.remoteCommand = "/bin/ls"
 jt.jobName = "list"
-jt.outputPath = "output_${JobTemplate.PARAMETRIC_INDEX}.txt"
-[1, 2, 8, 9, 10, 11, 19, 20, 21, 98, 99, 100, 101, 102, 998, 999, 1000, 1001].each {
+jt.outputPath = "list_output_${JobTemplate.PARAMETRIC_INDEX}.txt"
+[1, 2, 8 /*, 9, 10, 11, 19, 20, 21, 98, 99, 100, 101, 102, 998, 999, 1000, 1001*/].each {
     def jid = thisScript.workflow.runBulkJobs(jt, 1, it, 3)
+
+    thisScript.workflow.synchronize(jid, Workflow.TIMEOUT_WAIT_FOREVER, false)
 
     println "1 $it ${jid.size()} $jid"
 }
 
 println "25 50 4 ${thisScript.workflow.runBulkJobs(jt, 25, 50, 4)}"
-println "25 51 4 ${thisScript.workflow.runBulkJobs(jt, 25, 51, 4)}"
+
+//println "25 51 4 ${thisScript.workflow.runBulkJobs(jt, 25, 51, 4)}"
 println "25 52 4 ${thisScript.workflow.runBulkJobs(jt, 25, 52, 4)}"
-println "25 53 4 ${thisScript.workflow.runBulkJobs(jt, 25, 53, 4)}"
+//println "25 53 4 ${thisScript.workflow.runBulkJobs(jt, 25, 53, 4)}"
 println "25 54 4 ${thisScript.workflow.runBulkJobs(jt, 25, 54, 4)}"
-println "25 55 4 ${thisScript.workflow.runBulkJobs(jt, 25, 55, 4)}"
+//println "25 55 4 ${thisScript.workflow.runBulkJobs(jt, 25, 55, 4)}"
 
 def jt2 = thisScript.workflow.createJobTemplate()
 
 jt2.remoteCommand = "/bin/ls"
 jt2.args = ["-la", "/"]
 jt2.errorPath = "errors.txt"
-jt2.outputPath = "list_home.txt"
+jt2.outputPath = "list_home_${JobTemplate.PARAMETRIC_INDEX}.txt"
 jt2.jobName = "list_home"
 
 assert jt != jt2
@@ -44,7 +48,10 @@ jt3.errorPath = "errors.txt"
 
 assert jt != jt3
 
-println thisScript.workflow.runJob(jt3)
+def id3 = thisScript.workflow.runJob(jt3)
+println id3
+
+thisScript.workflow.wait(id3, Workflow.TIMEOUT_WAIT_FOREVER)
 
 def jt4 = thisScript.workflow.createJobTemplate()
 
