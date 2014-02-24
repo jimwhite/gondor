@@ -12,6 +12,7 @@ class Job {
     String id
     String comment
     File templateFile
+    File workingDir
     Integer procId
     Set<String> parentIds = []
 }

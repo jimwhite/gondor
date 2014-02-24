@@ -364,7 +364,8 @@ Log=${logFile}
 """
             jobs.each { String jobId, Job job ->
                 printer.println '# ' + job.comment
-                printer.println "JOB ${job.id} ${job.templateFile.path}"
+                printer.println "JOB ${job.id} ${job.templateFile.path}" +
+                        "${job.workingDir ? ' DIR ' + job.workingDir.path : ''}"
 
                 def vars = [:]
 

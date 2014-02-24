@@ -31,7 +31,7 @@ def jt2 = thisScript.workflow.createJobTemplate()
 jt2.remoteCommand = "/bin/ls"
 jt2.args = ["-la", "/"]
 jt2.errorPath = "errors.txt"
-jt2.outputPath = "list_home_${JobTemplate.PARAMETRIC_INDEX}.txt"
+jt2.outputPath = "list_home.txt"
 jt2.jobName = "list_home"
 
 assert jt != jt2
@@ -44,7 +44,8 @@ def jt3 = thisScript.workflow.createJobTemplate()
 
 jt3.remoteCommand = "/bin/ls"
 jt3.args = ["-la", "/"]
-jt3.errorPath = "errors.txt"
+jt3.outputPath = "${JobTemplate.WORKING_DIRECTORY}/list-la.txt"
+jt3.joinFiles = true
 
 assert jt != jt3
 
@@ -57,7 +58,8 @@ def jt4 = thisScript.workflow.createJobTemplate()
 
 jt4.remoteCommand = "/bin/ls"
 jt4.args = ["-la", "/"]
-jt4.errorPath = "errors.txt"
+jt4.outputPath = "${JobTemplate.WORKING_DIRECTORY}/list-la.txt"
+jt4.joinFiles = true
 
 assert jt3 == jt4
 
@@ -66,10 +68,10 @@ println thisScript.workflow.runJob(jt4)
 def jt5 = thisScript.workflow.createJobTemplate()
 
 jt5.remoteCommand = "/bin/ls"
-jt5.args = ["-la", "/"]
+jt5.args = ["-zlkjd893^la", "/"]
 jt5.outputPath = "list5.txt"
-jt5.errorPath = "errors.txt"
+jt5.joinFiles = true
 
 assert jt3 != jt5
 
-println thisScript.workflow.runJob(jt4)
+println thisScript.workflow.runJob(jt5)
