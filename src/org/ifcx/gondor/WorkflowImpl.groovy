@@ -334,11 +334,13 @@ Log=${logFile}
                 printer.println("Notification=Never");
             }
 
-            // It appears that Condor can only handle 1 email address for notifications
-            // while the DRMAA returns a set of them. If we have emails specified, then
-            // just use the first one...
-            if (jt.email) {
-                printer.println("Notify_user=" + jt.email.join(","))
+            // Documentation is a bit thin, but it seems Condor will accept multiple
+            // email addresses separated by a comma.
+            Set<String> emails = []
+            if (contact) emails.add(contact)
+            if (jt.email) emails.addAll(jt.email)
+            if (emails) {
+                printer.println("Notify_user=" + emails.join(","))
             }
 
             // Should jobs be submitted into a holding pattern

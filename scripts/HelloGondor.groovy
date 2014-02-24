@@ -3,7 +3,9 @@ import org.ifcx.drmaa.Workflow
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
 
-//thisScript.workflow.init("jimwhite@dryas")
+void init(String contact) {
+    super.init("jim")
+}
 
 def jt = thisScript.workflow.createJobTemplate()
 
