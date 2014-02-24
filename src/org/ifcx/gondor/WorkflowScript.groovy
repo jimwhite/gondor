@@ -55,7 +55,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     @Override
     String runJob(JobTemplate jt) throws DrmaaException {
-        workflow.getWorkflowName()
+        workflow.runJob(jt)
     }
 
     @Override
@@ -109,17 +109,17 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     public Object run()
     {
-        workflow = WorkflowFactory.getFactory().getWorkflow()
+        setWorkflow(WorkflowFactory.getFactory().getWorkflow())
 
         setWorkflowName(this.getClass().name)
 
-        setTemporaryFilesPath(workflow.workflowName + '.jobs')
+//        setTemporaryFilesPath(workflowName + '.jobs')
 
         init("")
 
         buildWorkflow()
 
-        createDAGFile(new File(workflow.workflowName + '.dag'))
+        createDAGFile(new File(workflowName + '.dag'))
 
         exit()
     }

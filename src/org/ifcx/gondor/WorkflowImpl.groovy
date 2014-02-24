@@ -17,7 +17,7 @@ public class WorkflowImpl implements Workflow {
 
     private String _contact = ""
     private String _workflowName = "gondor_default_workflow"
-    private String _temporaryFilesPath = "."
+    private String _temporaryFilesPath
 
     private File temporaryFilesDir
 
@@ -35,9 +35,11 @@ public class WorkflowImpl implements Workflow {
 
     @Override
     void init(String contact) throws DrmaaException {
+        if (hasInitialized) throw new AlreadyActiveSessionException("Can only initialize a workflow once.")
+
         this._contact = contact
 
-        if (!_temporaryFilesPath) setTemporaryFilesPath(_workflowName + ".jobs")
+        if (!temporaryFilesPath) setTemporaryFilesPath(workflowName + ".jobs")
 
         temporaryFilesDir = new File(temporaryFilesPath)
 
@@ -49,7 +51,7 @@ public class WorkflowImpl implements Workflow {
             throw new InternalException("The file $temporaryFilesDir exists where we want to put the job templates dir.")
         }
 
-        logFile = new File(_workflowName + ".log")
+        logFile = new File(temporaryFilesDir, workflowName + ".log")
 
         hasInitialized = true;
     }
