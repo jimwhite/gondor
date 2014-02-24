@@ -10,7 +10,7 @@ import org.ifcx.drmaa.WorkflowFactory
 public abstract class WorkflowScript extends GondorScript implements Workflow {
     Workflow workflow
 
-    abstract Object buildWorkflow();
+    protected abstract Object buildWorkflow();
 
     @Override
     void init(String contact) throws DrmaaException
@@ -45,7 +45,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     @Override
     JobTemplate createJobTemplate() throws DrmaaException {
-        workflow.getWorkflowName()
+        workflow.createJobTemplate()
     }
 
     @Override
@@ -80,7 +80,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     @Override
     int getJobProgramStatus(String jobId) throws DrmaaException {
-        workflow.getWorkflowName()
+        workflow.getJobProgramStatus(jobId)
     }
 
     @Override
@@ -119,7 +119,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
         buildWorkflow()
 
-        createDAGFile(new File(getWorkflow().workflowName + '.dag'))
+        createDAGFile(new File(workflow.workflowName + '.dag'))
 
         exit()
     }
