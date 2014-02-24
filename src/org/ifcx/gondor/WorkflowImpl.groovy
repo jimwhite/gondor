@@ -1,9 +1,9 @@
 package org.ifcx.gondor
 
+import org.ggf.drmaa.AlreadyActiveSessionException
 import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.InternalException
 import org.ggf.drmaa.InvalidJobException
-import org.ggf.drmaa.InvalidJobTemplateException
 import org.ggf.drmaa.JobInfo
 import org.ggf.drmaa.JobTemplate
 import org.ggf.drmaa.Version
@@ -13,17 +13,21 @@ import org.ifcx.drmaa.Workflow
 public class WorkflowImpl implements Workflow {
     private static final Version VERSION = new Version(0, 1)
 
+    boolean hasInitialized = false;
+
     String contact = ""
     String workflowName = "gondor_default_workflow"
 
     File jobTemplatesDir
-    Map<JobTemplate, JobTemplate> jobTemplateMap = [:]
-    Map<JobTemplate, File> jobTemplateFiles = [:]
 
+    File workingDir = new File('.')
     File logFile
 
     int job_number = 0
     int job_template_number = 0
+
+//    Map<JobTemplate, JobTemplate> jobTemplateMap = [:]
+//    Map<JobTemplate, File> jobTemplateFiles = [:]
 
     Map<String, Job> jobs = [:]
     Set<String> parentJobIds = []
@@ -43,6 +47,8 @@ public class WorkflowImpl implements Workflow {
         }
 
         logFile = new File(workflowName + ".log")
+
+        hasInitialized = true;
     }
 
 
@@ -52,11 +58,15 @@ public class WorkflowImpl implements Workflow {
     }
 
     @Override
-    void init(String contact, String workflowName) {
-        this.workflowName = workflowName
-        init(contact)
+    void createDAGFile(File dagFile) {
+        writeDAGFile(dagFile)
     }
 
+    @Override
+    void setWorkflowName(String name) {
+        if (hasInitialized) throw new AlreadyActiveSessionException("Can't change workflowName after initialization.")
+        this.workflowName = name
+    }
 
     @Override
     void exit() throws DrmaaException {
@@ -78,51 +88,63 @@ public class WorkflowImpl implements Workflow {
     }
 
     String nextJobTemplateName(String jobTemplateName) {
-        String.format("${jobTemplateName}_%04d", ++job_template_number)
+        String.format("${jobTemplateName}_%03d", ++job_template_number)
     }
 
-    File getJobTemplateFile(JobTemplate jt0) {
-        if (jobTemplateMap.containsKey(jt0)) {
-            return jobTemplateFiles[jobTemplateMap[jt0]]
-        }
+    def getJobTemplateFile(JobTemplate jt0) {
+//        if (jobTemplateMap.containsKey(jt0)) {
+//            return jobTemplateFiles[jobTemplateMap[jt0]]
+//        }
+//
+//        if (jobTemplateMap.values().find { it.jobName.equalsIgnoreCase(jt0.jobName) }) {
+//            throw new InvalidJobTemplateException("Job name ${jt0.jobName} used in more than one job template but they are not equivalent.")
+//        }
+//
+//        jt0 = (JobTemplateImpl) jt0.clone()
+//        JobTemplate jt1 = (JobTemplateImpl) jt0.clone()
 
-        if (jobTemplateMap.values().find { it.jobName.equalsIgnoreCase(jt0.jobName) }) {
-            throw new InvalidJobTemplateException("Job name ${jt0.jobName} used in more than one job template but they are not equivalent.")
-        }
+        def jt1 = jt0
 
-        jt0 = (JobTemplateImpl) jt0.clone()
-        JobTemplate jt1 = (JobTemplateImpl) jt0.clone()
+        def jobTemplateName = nextJobTemplateName(jt1.jobName ?: defaultJobTemplateName(jt1))
 
-        if (!jt1.jobName) {
-            jt1.setGeneratedJobName(nextJobTemplateName(jt1.remoteCommand.replaceAll(/[^A-Za-z_]/, '_')))
-        }
-
-        File jobTemplateFile = new File(jobTemplatesDir, jt1.jobName + ".job")
+        File jobTemplateFile = new File(jobTemplatesDir, jobTemplateName + ".job")
 
         writeJobTemplateFile(jt1, jobTemplateFile)
 
-        jobTemplateMap[jt0] = jt1
-        jobTemplateFiles[jt1] = jobTemplateFile
+//        jobTemplateMap[jt0] = jt1
+//        jobTemplateFiles[jt1] = jobTemplateFile
+
+        def jobComment = "${jt1.workingDirectory ? 'cd ' + replacePathPlaceholders(jt1.workingDirectory) + ' ' : ''}" +
+                "${jt1.remoteCommand} ${jt1.args.join(' ')}" +
+                "${jt1.inputPath ? ' <' + replacePathPlaceholders(jt1.inputPath) : ''}" +
+                "${jt1.outputPath ? ' >' + replacePathPlaceholders(jt1.outputPath) : ''}" +
+                "${jt1.errorPath ? ' 2>' + replacePathPlaceholders(jt1.errorPath) : ''}"
+
+        [jobTemplateName, jobComment, jobTemplateFile]
+    }
+
+    private String defaultJobTemplateName(JobTemplateImpl jt1) {
+        def name = jt1.remoteCommand.replaceAll(/[^A-Za-z_]/, '_')
+        if (!name.startsWith('_')) name = '_' + name
+        name
     }
 
     @Override
     String runJob(JobTemplate jt) throws DrmaaException {
-        File jobTemplateFile = getJobTemplateFile(jt)
-        jt = jobTemplateMap[jt]
-        def jobId = nextJobId(jt.jobName)
-        jobs[jobId] = new Job(jobId: jobId, jobTemplate: jt)
+        def (jobTemplateName, jobComment, jobTemplateFile) = getJobTemplateFile(jt)
+        def jobId = nextJobId(jobTemplateName)
+        jobs[jobId] = new Job(id: jobId, comment: jobComment, /*procId: -1,*/ templateFile: jobTemplateFile)
         jobId
     }
 
     @Override
     List runBulkJobs(JobTemplate jt, int start, int end, int incr) throws DrmaaException {
-        File jobTemplateFile = getJobTemplateFile(jt)
-        jt = jobTemplateMap[jt]
-        String jobName = jt.jobName
+        def (jobTemplateName, jobComment, jobTemplateFile) = getJobTemplateFile(jt)
         if (incr > end - start) incr = Math.max(end - start, 1)
-        def jobIds = (start..end).step(incr).collect {
-            String jobId = nextJobId(jobName)
-            jobs[jobId] = new Job(jobId: jobId, jobTemplate: jt)
+        def jobIds = (start..end).step(incr).collect { procId ->
+            def jobId = nextJobId(jobTemplateName) + String.sprintf('_%03d', procId)
+            jobs[jobId] = new Job(id: jobId, comment: jobComment, procId: procId, templateFile: jobTemplateFile)
+            jobId
         }
         assert jobIds.size() == Math.floor(((end - start) / incr) + 1)
         jobIds
@@ -182,19 +204,19 @@ public class WorkflowImpl implements Workflow {
      * @throws Exception
      */
     void writeJobTemplateFile(JobTemplate jt, File jobTemplateFile) throws Exception {
-        jobTemplateFile.withPrintWriter { writer ->
-            writer.println """### BEGIN Condor Job Template File ###
-# Generated by $drmSystem version $drmaaImplementation on ${new Date()}
+        jobTemplateFile.withPrintWriter { printer ->
+            printer.println """### BEGIN Condor Job Template File ###
+# Generated by $drmSystem version $version using $drmaaImplementation on ${new Date()}
 #
-Log=${logFile}
 Universe=vanilla
 Executable=${jt.remoteCommand}
+Log=${logFile}
 """
-
-            // Should jobs be submitted into a holding pattern
-            // (don't immediately start running them)?
-            if (jt.getJobSubmissionState() == JobTemplate.HOLD_STATE) {
-                writer.println "Hold=true"
+            // Handle the case of the user/caller setting the environment for the job.
+            if (jt.jobEnvironment) {
+                // This is the Condor directive for setting the job environment.
+                def envArgsValue = jt.jobEnvironment.collect { String k, String v -> k + '=' + v.replaceAll('"', '""') }
+                printer.println "Environment = \"${envArgsValue.join(' ')}\""
             }
 
             // Here we handle the job arguments, if any have been supplied.
@@ -214,28 +236,23 @@ Executable=${jt.remoteCommand}
                     }
                     arg
                 }
-                writer.println "Arguments=\"${args.join(' ')}\""
+                printer.println "Arguments=\"${args.join(' ')}\""
             }
 
             // If the working directory has been set, configure it.
-            if (jt.getWorkingDirectory() != null) {
-                writer.println "InitialDir=" + jt.getWorkingDirectory()
+            if (jt.workingDirectory != null) {
+                printer.println "InitialDir=" + replacePathPlaceholders(jt.workingDirectory)
             }
 
             // Handle any native specifications that have been set
             if (jt.getNativeSpecification() != null) {
-                writer.println(jt.getNativeSpecification())
+                printer.println(jt.getNativeSpecification())
             }
 
             // Handle the job category.
             //TODO: Could use priority or rank for this.
             if (jt.getJobCategory() != null) {
-                writer.println("# Category=" + jt.getJobCategory())
-            }
-
-            // Send email notifications?
-            if (jt.getBlockEmail()) {
-                writer.println("Notification=Never");
+                printer.println("# Category=" + jt.getJobCategory())
             }
 
             // If the caller has specified a start time, then we add special
@@ -243,142 +260,136 @@ Executable=${jt.remoteCommand}
             // special...
             if (jt.getStartTime() != null) {
                 long time = (jt.getStartTime().getTimeInMillis() + 500) / 1000;
-                writer.println("PeriodicRelease=(CurrentTime > " + time + ")");
+                printer.println("PeriodicRelease=(CurrentTime > " + time + ")");
 
-                // TODO: Is this correct?  If we submit with a hold will release happen?
-                if (jt.getJobSubmissionState() != JobTemplate.HOLD_STATE) {
-                    writer.println "Hold=true"
-                }
+//                // TODO: Is this correct?  If we submit with a hold will release happen?
+//                if (jt.getJobSubmissionState() != JobTemplate.HOLD_STATE) {
+//                    writer.println "Hold=true"
+//                }
             }
 
             // Handle the naming of the job.
             if (jt.jobName) {
                 // TODO: The C implementation has a "+" character in front of the
                 // directive. We add it here as well. Find out why (or if) this is necessary.
-                writer.println("+JobName=" + jt.jobName);
+                printer.println("+JobName=" + jt.jobName);
             }
 
             // Handle the job input path. Care must be taken to replace DRMAA tokens
             // with tokens that Condor understands.
             if (jt.getInputPath() != null) {
-                String input = drmaaProcessPath(jt.inputPath)
-                writer.println("Input=" + input)
+                String input = replacePathPlaceholders(jt.inputPath)
+                printer.println("Input=" + input)
 
                 // Check whether to transfer the input files
                 if (jt.transferFiles?.inputStream) {
-                    writer.println("transfer_input_files=i");
+                    printer.println("transfer_input_files=" + input);
                 }
             }
 
             // Handle the job output path. Care must be taken to replace DRMAA tokens
             // with tokens that Condor understands.
             if (jt.outputPath) {
-                String output = drmaaProcessPath(jt.outputPath)
-                writer.println("Output=" + output);
+                String output = replacePathPlaceholders(jt.outputPath)
+                printer.println("Output=" + output);
 
                 // Check if we need to join input and output files
                 if (jt.joinFiles) {
-                    writer.println("# Joining Input and Output");
-                    writer.println("Error=" + output);
+                    printer.println("# Joining Input and Output");
+                    printer.println("Error=" + output);
                 }
             }
 
             // Handle the error path if specified. Do token replacement if necessary.
-            if (jt.errorPath && ! jt.joinFiles) {
-                String errorPath = drmaaProcessPath(jt.errorPath)
-                writer.println("Error=" + errorPath)
+            if (! jt.joinFiles && jt.errorPath) {
+                String errorPath = replacePathPlaceholders(jt.errorPath)
+                printer.println("Error=" + errorPath)
             }
 
             if (jt.transferFiles?.outputStream) {
-                writer.println("should_transfer_files=IF_NEEDED");
-                writer.println("when_to_transfer_output=ON_EXIT");
+                printer.println("should_transfer_files=IF_NEEDED");
+                printer.println("when_to_transfer_output=ON_EXIT");
             }
 
-            // Handle the case of the user/caller setting the environment for the job.
-            if (jt.jobEnvironment) {
-                // This is the Condor directive for setting the job environment.
-                def envArgsValue = jt.jobEnvironment.collect { String k, String v -> k + '=' + v.replaceAll('"', '""') }
-                writer.println "Environment = \"${envArgsValue.join(' ')}\""
+            // Send email notifications?
+            if (jt.getBlockEmail()) {
+                printer.println("Notification=Never");
             }
 
             // It appears that Condor can only handle 1 email address for notifications
             // while the DRMAA returns a set of them. If we have emails specified, then
             // just use the first one...
             if (jt.email) {
-                writer.println("Notify_user=" + jt.email.join(";"))
+                printer.println("Notify_user=" + jt.email.join(","))
+            }
+
+            // Should jobs be submitted into a holding pattern
+            // (don't immediately start running them)?
+            if (jt.getJobSubmissionState() == JobTemplate.HOLD_STATE) {
+                printer.println "Hold=true"
             }
 
             // Every Condor submit file needs a Queue directive to make the job go.
             // Array jobs will have a Queue count greater than 1.
-            writer.println "Queue"
-            writer.println "### End of Condor job template file ###"
+            printer.println "Queue"
+            printer.println "#"
+            printer.println "### END Condor Job Template File ###"
         }
     }
 
-    private String drmaaProcessPath(String path) {
-        path = path.replace(JobTemplate.PARAMETRIC_INDEX, '$(_GONDOR_JOBID)')
+    private String replacePathPlaceholders(String path) {
+        path = path.replace(JobTemplate.PARAMETRIC_INDEX, '$(_GONDOR_PROCID)')
         path = path.replace(JobTemplate.HOME_DIRECTORY, '$ENV(HOME)')
+        path = path.replace(JobTemplate.WORKING_DIRECTORY, workingDir.path)
         if (path.startsWith(":")) {
             path = path.substring(1);
         }
         path
     }
 
-    def generate_dag(dag_file)
+    def writeDAGFile(dag_file)
     {
         def warnings = 0
 
         dag_file.withPrintWriter { printer ->
             def dependencies = []
-            jobs.each { Job job ->
-                // println job
-                printer.println "JOB ${job.jobId} ${job.jobTemplate.jobName}"
 
-                // Variables that begin with a dash have a default value of themselves.
-                job.vars.grep { it.startsWith('-') }.each { if (!job.args.containsKey(it)) job.args[it] = it }
+            printer.println """### BEGIN Condor DAGman DAG File ###
+# Generated by $drmSystem version $version using $drmaaImplementation on ${new Date()}
+#
+"""
+            jobs.each { String jobId, Job job ->
+                printer.println '# ' + job.comment
+                printer.println "JOB ${job.id} ${job.templateFile.path}"
 
-                if (!job.args.keySet().containsAll(job.vars)) {
-                    printer.println "### WARNING: Missing arguments: ${job.vars - job.args.keySet()}"
-                    ++warnings
+                def vars = [:]
+
+                if (job.procId != null) { vars._GONDOR_PROCID = job.procId }
+
+                if (vars) {
+                    printer.println "VARS ${job.id} ${vars.collect { k, v -> "$k=\"$v\""}.join(' ')}"
                 }
-
-                if (!job.vars.containsAll(job.args.keySet())) {
-                    printer.println "### WARNING: Extra arguments: ${job.args.keySet() - job.vars}"
-                    ++warnings
-                }
-
-                printer.println "VARS ${job.id} " + ((job.vars.collect { var ->
-                    if (job.invars.contains(var)) {
-                        def input_files = job.args[var]
-                        if (input_files instanceof File) input_files = [input_files]
-
-                        input_files.each { File input_file ->
-                            def parentJob = output_files[input_file]
-
-                            if (!parentJob) {
-                                if (!input_file.exists()) {
-                                    printer.println ("### WARNING: Didn't find input file for generating parent dependency for '$var'!")
-                                    printer.println ("### Assuming file exists: ${input_file.canonicalPath}")
-                                    ++warnings
-                                }
-                            } else if (!parentJob.data) {
-                                job.parents.add(parentJob)
-                            }
-                        }
-                    }
-
-                    '_' + ((var == 'infile') ? 'MyJobInput' : var) + '=\"' + argument_to_string(job.args[var]) + '\"'
-                }) + ['_MyJobOutput=\"'+job.outfile.canonicalPath+'\"', '_MyJobError=\"'+job.errfile.canonicalPath+'\"']).join(' ')
-
-                if (job.parents) dependencies.add("PARENT ${job.parents.id.unique().join(' ')} CHILD ${job.id}".toString())
 
                 printer.println()
             }
 
             dependencies.each { printer.println it }
+
+            printer.println """#
+### END Condor DAGman DAG File ###"""
         }
 
-        println "Generated ${all_jobs.size()} jobs for Condor DAG ${dag_file}"
+        println "Generated ${jobs.size()} jobs for Condor DAG ${dag_file}"
         if (warnings) println "WARNING: ${warnings} warnings generated! See DAG file for details."
     }
+
+    def argument_to_string(val)
+    {
+        if (val instanceof Collection) {
+            (val.collect { it instanceof File ? it.canonicalPath : it }).join(' ')
+        } else {
+            val instanceof File ? (val.isDirectory() ? val.canonicalPath + "/" : val.canonicalPath) : val
+        }
+    }
+
 }

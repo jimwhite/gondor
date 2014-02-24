@@ -11,9 +11,13 @@ public abstract class WorkflowScript extends GondorScript {
     Object run() {
         workflow = WorkflowFactory.getFactory().getWorkflow()
 
-        workflow.init("", this.getClass().name)
+        workflow.setWorkflowName(this.getClass().name)
+
+        workflow.init("")
 
         buildWorkflow()
+
+        workflow.createDAGFile(new File(getWorkflow().workflowName + '.dag'))
     }
 
 }

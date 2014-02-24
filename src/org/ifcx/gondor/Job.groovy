@@ -11,6 +11,8 @@ import org.ggf.drmaa.JobTemplate
  */
 
 class Job {
-    String jobId
-    JobTemplate jobTemplate
+    String id
+    String comment
+    File templateFile
+    Integer procId
 }
