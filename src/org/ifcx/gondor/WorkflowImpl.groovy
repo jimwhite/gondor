@@ -33,6 +33,8 @@ public class WorkflowImpl implements Workflow {
     Map<String, Job> jobs = [:]
     Set<String> parentJobIds = []
 
+    List<String> warnings = []
+
     @Override
     void init(String contact) throws DrmaaException {
         if (hasInitialized) throw new AlreadyActiveSessionException("Can only initialize a workflow once.")
@@ -187,6 +189,15 @@ public class WorkflowImpl implements Workflow {
         parentJobIds += jobId
 
         new JobInfoImpl(jobId: jobId)
+    }
+
+    private Set<String> _getParentJobIds(String childJobId) {
+        jobs[childJobId].parentIds
+    }
+
+    @Override
+    void addToParentJobIds(String childJobId, String parentJobId) {
+        _getParentJobIds(childJobId).add(parentJobId)
     }
 
     @Override
@@ -369,10 +380,13 @@ Log=${logFile}
         path
     }
 
+    @Override
+    void addWarning(String message) {
+        warnings << message
+    }
+
     def writeDAGFile(dag_file)
     {
-        def warnings = 0
-
         dag_file.withPrintWriter { printer ->
             Map<Set<String>, Set<String>> dependencies = [:].withDefault { [] as Set<String> }
 
@@ -409,12 +423,16 @@ Log=${logFile}
                 printer.println "PARENT ${parents.sort().join(' ')} CHILD ${children.sort().join(' ')}"
             }
 
+            warnings.each { printer.println "\n# $it" }
+
+            printer.println()
+
             printer.println """#
 ### END Condor DAGman DAG File ###"""
         }
 
         println "Generated ${jobs.size()} jobs for Condor DAG ${dag_file}"
-        if (warnings) println "WARNING: ${warnings} warnings generated! See DAG file for details."
+        if (warnings) println "WARNING: ${warnings.size()} warnings generated! See DAG file for details."
     }
 
 }

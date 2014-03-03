@@ -10,7 +10,83 @@ import org.ifcx.drmaa.WorkflowFactory
 public abstract class WorkflowScript extends GondorScript implements Workflow {
     Workflow workflow
 
+    List<Process> processes = []
+    Map<String, Process> processForJobId = [:]
+    Map<File, String> jobIdForOutputFile = [:]
+
     protected abstract Object buildWorkflow();
+
+    public Object run()
+    {
+        setWorkflow(WorkflowFactory.getFactory().getWorkflow())
+
+        setWorkflowName(this.getClass().name)
+
+//        setTemporaryFilesPath(workflowName + '.jobs')
+
+        init("")
+
+        buildWorkflow()
+
+        runJobsForProcesses()
+
+        addWorkflowDependencies()
+
+        createDAGFile(new File(workflowName + '.dag'))
+
+        exit()
+    }
+
+    Command command(Map params, @DelegatesTo(Command) Closure description) {
+        new Command(this, params.path, description)
+    }
+
+    Process process(Command command, Map<String, Object> params) {
+        Process process = new Process(command:command, params:params)
+        processes.add(process)
+        process
+    }
+
+    void runJobsForProcesses() { processes.each { runJobForProcess(it) } }
+
+    void runJobForProcess(Process process) {
+        JobTemplate jt = process.command.createJobTemplate(process)
+        String jobId = runJob(jt)
+        processForJobId[jobId] = process
+        process.outfiles.each { jobIdForOutputFile[it] = jobId }
+    }
+
+    void addWorkflowDependencies() {
+        processForJobId.each { String childJobId, Process process ->
+            process.infiles.each { File infile ->
+                String parentJobId = jobIdForOutputFile[infile]
+                if (parentJobId) {
+                    addToParentJobIds(childJobId, parentJobId)
+                } else {
+                    if (!infile.exists()) addWarning("Job $childJobId has input file $infile which does not exist and no job says it will output it.")
+                }
+            }
+        }
+    }
+
+    @Override
+    void addToParentJobIds(String childJobId, String parentJobId) {
+        workflow.addToParentJobIds(childJobId, parentJobId)
+    }
+
+    // Default Workflow method implementations delegate to the Workflow instance for the script.
+    // These give the script an opportunity to override with custom logic which
+    // does not necessarily need to call up to these.
+
+    @Override
+    void addWarning(String message) {
+        workflow.addWarning(message)
+    }
+
+    @Override
+    void createDAGFile(File dagFile)  throws DrmaaException {
+        workflow.createDAGFile(dagFile)
+    }
 
     @Override
     void init(String contact) throws DrmaaException
@@ -102,26 +178,4 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     String getDrmaaImplementation() {
         workflow.getDrmaaImplementation()
     }
-
-    void createDAGFile(File dagFile)  throws DrmaaException {
-        workflow.createDAGFile(dagFile)
-    }
-
-    public Object run()
-    {
-        setWorkflow(WorkflowFactory.getFactory().getWorkflow())
-
-        setWorkflowName(this.getClass().name)
-
-//        setTemporaryFilesPath(workflowName + '.jobs')
-
-        init("")
-
-        buildWorkflow()
-
-        createDAGFile(new File(workflowName + '.dag'))
-
-        exit()
-    }
-
 }

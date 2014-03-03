@@ -8,12 +8,16 @@ import groovy.lang.Script;
 
 import org.apache.ivy.util.StringUtils;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.ggf.drmaa.JobTemplate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class GondorScript extends Script {
+//    abstract public Process process(Command command, Map<String, Object> params);
 
 //    @Override
 //    public Object getProperty(String property) {
@@ -34,40 +38,39 @@ public abstract class GondorScript extends Script {
 //        }
 //    }
 
-    public GondorScript()
-    {
-        super(new CommandBindings());
-    }
-
-    @Override
-    public Object invokeMethod(String name, Object args) {
-        try {
-            System.out.println("invoking " + name);
-            if (name.equals("run")) System.out.println("invoked run");
-            return super.invokeMethod(name, args);
-        }
-        // if the method was not found in the current scope (the script's methods)
-        // let's try to see if there's a method closure with the same name in the binding
-        catch (MissingMethodException mme) {
-            try {
-                if (name.equals(mme.getMethod())) {
-                    // We do this again here because there is a bug in Script.invokeMethod.
-                    // See GROOVY-6582.  It will be fixed but has been broken a long time,
-                    // so make sure we get it right by doing the right thing here.
-                    Object boundClosure = getProperty(name);
-                    if (boundClosure != null && boundClosure instanceof Closure) {
-                        return ((Closure) boundClosure).call((Object[])args);
-                    } else {
-                        throw mme;
-                    }
-                } else {
-                    throw mme;
-                }
-            } catch (MissingPropertyException mpe) {
-                throw mme;
-            }
-        }
-    }
+//    public GondorScript()
+//    {
+//        super(new CommandBindings());
+//    }
+//
+//    @Override
+//    public Object invokeMethod(String name, Object args) {
+//        try {
+//            System.out.println("invoking " + name);
+//            return super.invokeMethod(name, args);
+//        }
+//        // if the method was not found in the current scope (the script's methods)
+//        // let's try to see if there's a method closure with the same name in the binding
+//        catch (MissingMethodException mme) {
+//            try {
+//                if (name.equals(mme.getMethod())) {
+//                    // We do this again here because there is a bug in Script.invokeMethod.
+//                    // See GROOVY-6582.  It will be fixed but has been broken a long time,
+//                    // so make sure we get it right by doing the right thing here.
+//                    Object boundClosure = getProperty(name);
+//                    if (boundClosure != null && boundClosure instanceof Closure) {
+//                        return ((Closure) boundClosure).call((Object[])args);
+//                    } else {
+//                        throw mme;
+//                    }
+//                } else {
+//                    throw mme;
+//                }
+//            } catch (MissingPropertyException mpe) {
+//                throw mme;
+//            }
+//        }
+//    }
 
 //    LsCommand lsCommand = new LsCommand();
 //
