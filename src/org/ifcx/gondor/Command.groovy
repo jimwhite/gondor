@@ -24,7 +24,7 @@ class Command extends Closure<Process>
         super(desc.owner)
         this.workflowScript = workflowScript
         this.commandPath = path
-        desc.resolveStrategy = Closure.DELEGATE_FIRST
+//        desc.resolveStrategy = Closure.DELEGATE_FIRST
         desc.delegate = this
         desc.call(this)
     }
@@ -37,14 +37,18 @@ class Command extends Closure<Process>
 
     def infile(String name) { args << { List<String> a, WorkflowScript w, Process p, Map m ->
         File f = resolveFileArgument(m, name)
-        p.infiles << f
-        a << stringifyFile(f)
+        if (f != null) {
+            p.infiles << f
+            a << stringifyFile(f)
+        }
     }}
 
     def outfile(String name) { args << { List<String> a, WorkflowScript w, Process p, Map m ->
         File f = resolveFileArgument(m, name)
-        p.outfiles << f
-        a << stringifyFile(f)
+        if (f != null) {
+            p.outfiles << f
+            a << stringifyFile(f)
+        }
     }}
 
     def jobTemplate(@DelegatesTo(JobTemplate) Closure setupJT) {
@@ -64,27 +68,25 @@ class Command extends Closure<Process>
 
     JobTemplate createJobTemplate(Process process) {
         JobTemplate jt = workflowScript.createJobTemplate()
+
         jt.remoteCommand = process.command.getCommandPath()
+
         List<String> jobArgs = []
         args.each { Closure ac ->
             ac(jobArgs, getWorkflowScript(), process, process.params)
         }
         jt.args = jobArgs
+
+        if (process._stdin != null) jt.setInputPath(process._stdin.path)
+        if (process._stdout != null) jt.setOutputPath(process._stdout.path)
+        if (process._stderr != null) jt.setErrorPath(process._stderr.path)
+
         if (jobTemplateCustomizer) jobTemplateCustomizer(jt)
+
         jt
     }
 
-//    static {
-//        def parse_nbest = new Command(new WorkflowScript() {
-//                @Override
-//                protected Object buildWorkflow() { null }
-//        },
-//            'first-stage/PARSE/parseIt', {
-//            flag("-K")
-//            flag("-l400")
-//            flag("-N50")
-//            infile("model")
-//            infile("input")
-//        })
-//    }
+    File newTemporaryFile(String s) {
+        getWorkflowScript().newTemporaryFile(commandPath.replaceAll(/\W/, /_/), s)
+    }
 }

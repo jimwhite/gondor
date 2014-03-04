@@ -69,6 +69,10 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         }
     }
 
+    File newTemporaryFile(String prefix, String suffix) {
+        File.createTempFile(prefix, suffix, new File(getTemporaryFilesPath()))
+    }
+
     @Override
     void addToParentJobIds(String childJobId, String parentJobId) {
         workflow.addToParentJobIds(childJobId, parentJobId)
@@ -178,4 +182,5 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     String getDrmaaImplementation() {
         workflow.getDrmaaImplementation()
     }
+
 }

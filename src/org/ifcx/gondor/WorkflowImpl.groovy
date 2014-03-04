@@ -420,6 +420,9 @@ Log=${logFile}
             }
 
             dependencies.each { Set<String> parents, Set<String> children ->
+                // N.B. If breaking long lines DAGman files can use "\" but be sure to have a space before it.
+                // https://lists.cs.wisc.edu/archive/htcondor-users/2014-February/msg00010.shtml
+
                 printer.println "PARENT ${parents.sort().join(' ')} CHILD ${children.sort().join(' ')}"
             }
 

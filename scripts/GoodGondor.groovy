@@ -51,5 +51,16 @@ workflowScript.with {
 
     def reranker_output = new File("best_parse.ptb")
 
-    rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS, stdin:parsedFile, stdout:reranker_output)
+//    rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS, stdin:parsedFile, stdout:reranker_output)
+
+    rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) << parsedFile >> reranker_output >>> new File('errs.txt')
+
+    (parse_nbest(model: modelFile) << new File("in2.txt")) | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
+
+    parse_nbest(model: modelFile) << new File("in2.txt") | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
+
+    // new File("in2.txt") >> parse_nbest(model: modelFile) | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
+
+    // parse_nbest(model: modelFile) | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) << new File("in3.txt") >> new File("out3.tree")
+
 }
