@@ -13,9 +13,22 @@ class Process
     List<File> infiles = []
     List<File> outfiles = []
 
-    File _stdin
-    File _stdout
-    File _stderr
+    private File _stdin
+    private File _stdout
+    private File _stderr
+
+    @Override
+    public Object getProperty(String property) {
+//        command.argumentDefaultValues.contains(property) ? params[property] : super.getProperty(property)
+//        params.containsKey(property) ? params[property] : super.getProperty(property)
+        try {
+            // super.getProperty(property)
+            getMetaClass().getProperty(this, property)
+        } catch (MissingPropertyException e) {
+            if (!params.containsKey(property)) throw e
+            params[property]
+        }
+    }
 
     Process or(Process sink) { toProcess(sink) }
 

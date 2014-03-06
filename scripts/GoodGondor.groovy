@@ -1,3 +1,4 @@
+import org.ifcx.gondor.Command
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript workflowScript
 
@@ -24,17 +25,23 @@ workflowScript.with {
     runJob(jt)
 
     def parse_nbest = command(path:'first-stage/PARSE/parseIt') {
-        flag "-K" ; flag "-l400" ; flag "-N50" ; infile "model" ; infile "input" ; outfile "output"
+        flag "-K"
+        arg "opt", { "--opt=$it" }, Command.OPTIONAL
+//        flag "-l400"
+        arg "def", {"-l$it"}, 400
+        arg "n", {"-N$it"}, Command.REQUIRED
+        arg "m", {"-NN$it"}
+//        arg "n", { assert it && "n is required for parseIt" ; "-N$it"}
+        arg "foo"
+        infile "model"
+        infile "input"
+        outfile "output"
         jobTemplate { softRunDurationLimit = 100 }
     }
 
     // second-stage/programs/features/best-parses" -l "$MODELDIR/features.gz" "$MODELDIR/$ESTIMATORNICKNAME-weights.gz"
     def rerank_parses = command(path:'second-stage/programs/features/best-parses') {
-        flag '-l'
-        infile 'features'
-        infile 'weights'
-        infile 'stdin'
-        outfile 'stdout'
+        flag '-l' ; infile 'features' ; infile 'weights' ; infile 'stdin' ; outfile 'stdout'
     }
 
 //
@@ -44,7 +51,9 @@ workflowScript.with {
     def modelFile = new File("model.dat")
     def inputFile = new File("input.txt")
     def parsedFile = new File("output1.ptb")
-    parse_nbest(model:modelFile, input:inputFile, output:parsedFile)
+    def p = parse_nbest(n:15, model:modelFile, input:inputFile, output:parsedFile, m:2)
+
+    println p.n
 
     def RERANKER_FEATURES = new File('RERANKER_FEATURES')
     def RERANKER_WEIGHTS = new File('RERANKER_WEIGHTS')
@@ -55,9 +64,10 @@ workflowScript.with {
 
     rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) << parsedFile >> reranker_output >>> new File('errs.txt')
 
-    (parse_nbest(model: modelFile) << new File("in2.txt")) | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
+//    (parse_nbest(n:5, model: modelFile) << new File("in2.txt")) | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
+    (parse_nbest(opt:5, m:0, foo:0, model: modelFile) << new File("in2.txt")) | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
 
-    parse_nbest(model: modelFile) << new File("in2.txt") | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
+    parse_nbest(n:5, foo:"-", model: modelFile) << new File("in2.txt") | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
 
     // new File("in2.txt") >> parse_nbest(model: modelFile) | rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS) >> new File("out2.tree")
 

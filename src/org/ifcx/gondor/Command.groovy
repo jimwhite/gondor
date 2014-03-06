@@ -24,35 +24,69 @@ class Command extends Closure<Process>
         super(desc.owner)
         this.workflowScript = workflowScript
         this.commandPath = path
-//        desc.resolveStrategy = Closure.DELEGATE_FIRST
         desc.delegate = this
         desc.call(this)
     }
 
+    final static def REQUIRED = new Object()
+    final static def OPTIONAL = new Object()
+
+    Map<String, Object> argumentDefaultValues = [:]
     List<Closure> args = []
 
-    def flag(String lit) { args << { List<String> a, WorkflowScript w, Process p, Map m ->
-        a << lit
-    } }
-
-    def infile(String name) { args << { List<String> a, WorkflowScript w, Process p, Map m ->
-        File f = resolveFileArgument(m, name)
-        if (f != null) {
-            p.infiles << f
-            a << stringifyFile(f)
+    def flag(String lit) {
+        args << { List<String> a, WorkflowScript w, Process p, Map m ->
+            a << lit
         }
-    }}
+    }
 
-    def outfile(String name) { args << { List<String> a, WorkflowScript w, Process p, Map m ->
-        File f = resolveFileArgument(m, name)
-        if (f != null) {
-            p.outfiles << f
-            a << stringifyFile(f)
+    def arg(String name, Closure pat = { it }, Object val = REQUIRED) {
+        addArgumentName(name, val)
+        args << { List<String> a, WorkflowScript w, Process p, Map m ->
+            def v = m[name]
+            if (v.is(REQUIRED)) {
+                System.err.println "Warning: Missing argument value for '$name' in command ${getCommandPath()}"
+            } else if (!v.is(OPTIONAL)) {
+                a << pat(v).toString()
+            }
         }
-    }}
+    }
+
+    def arg(Map m) {
+        arg(m.name, m.pat, m.val)
+    }
+
+    def infile(String name, File val = null) {
+        addArgumentName(name, val)
+        args << { List<String> a, WorkflowScript w, Process p, Map m ->
+            File f = resolveFileArgument(m, name)
+            if (f != null) {
+                p.infiles << f
+                a << stringifyFile(f)
+            }
+        }
+    }
+
+    def outfile(String name, File val = null) {
+        addArgumentName(name, val)
+        args << { List<String> a, WorkflowScript w, Process p, Map m ->
+            File f = resolveFileArgument(m, name)
+            if (f != null) {
+                p.outfiles << f
+                a << stringifyFile(f)
+            }
+        }
+    }
 
     def jobTemplate(@DelegatesTo(JobTemplate) Closure setupJT) {
         jobTemplateCustomizer = setupJT
+    }
+
+    void addArgumentName(String name, Object val) {
+        if (argumentDefaultValues.containsKey(name)) {
+            System.err.println "Warning: Duplicated argument name '$name' in command $commandPath"
+        }
+        argumentDefaultValues[name] = val
     }
 
     static File resolveFileArgument(Map map, String s) { map[s] }
