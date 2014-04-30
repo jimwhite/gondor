@@ -1,0 +1,28 @@
+apply plugin: 'groovy'
+
+sourceCompatibility = 1.6
+
+version = '0.1'
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        groovy {
+            srcDirs = ['src']
+        }
+    }
+
+    test {
+        groovy {
+            srcDirs = ['testSrc']
+        }
+    }
+}
+
+dependencies {
+    compile files('/Users/jim/Projects/Groovy/groovy-2.3.0-SNAPSHOT/embeddable/groovy-all-2.3.0-SNAPSHOT.jar')
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}

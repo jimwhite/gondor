@@ -1,4 +1,6 @@
 import org.ifcx.gondor.Command
+import org.ifcx.gondor.Command
+import org.ifcx.gondor.Command
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript workflowScript
 

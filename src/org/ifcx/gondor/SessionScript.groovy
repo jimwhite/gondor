@@ -18,9 +18,9 @@ public abstract class SessionScript extends GondorScript {
     }
 
     @Override
-    Object run() {
+    Object runScriptBody() {
         preRun()
-        3.times { runScript() }
+        3.times { runSessionScriptBody() }
         postRun()
     }
 
@@ -36,5 +36,5 @@ public abstract class SessionScript extends GondorScript {
 //        }
 //    }
 
-    abstract Object runScript();
+    abstract Object runSessionScriptBody();
 }

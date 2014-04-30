@@ -95,7 +95,7 @@ class Command extends Closure<Process>
 
     WorkflowScript getWorkflowScript() { workflowScript }
 
-    @Override
+//    @Override
     Process call(Map params) {
         workflowScript.process(this, params)
     }

@@ -1,23 +1,27 @@
 package org.ifcx.gondor
 
-import org.ggf.drmaa.DrmaaException
-import org.ggf.drmaa.JobInfo
 import org.ggf.drmaa.JobTemplate
-import org.ggf.drmaa.Version
 import org.ifcx.drmaa.Workflow
 import org.ifcx.drmaa.WorkflowFactory
 
 public abstract class WorkflowScript extends GondorScript implements Workflow {
+    /**
+     * The workflow script has delegated access (and can override) to all Workflow methods.
+     * Note that this field isn't initialized until the <code>run</code> method is called.
+     * That means script class (and member) initializers can't use any of them.
+     */
+    @Delegate
     Workflow workflow
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
     Map<File, String> jobIdForOutputFile = [:]
 
-    protected abstract Object buildWorkflow();
+    protected abstract Object runWorkflowScriptBody();
 
-    public Object run()
+    public Object runScriptBody()
     {
+        // Waiting until we're run means that script class initializers can't use any of the delegated methods.
         setWorkflow(WorkflowFactory.getFactory().getWorkflow())
 
         setWorkflowName(this.getClass().name)
@@ -26,15 +30,17 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
         init("")
 
-        buildWorkflow()
+        try {
+            runWorkflowScriptBody()
 
-        runJobsForProcesses()
+            runJobsForProcesses()
 
-        addWorkflowDependencies()
+            addWorkflowDependencies()
 
-        createDAGFile(new File(workflowName + '.dag'))
-
-        exit()
+            createDAGFile(new File(workflowName + '.dag'))
+        } finally {
+            exit()
+        }
     }
 
     Command command(Map params, @DelegatesTo(Command) Closure description) {
@@ -74,14 +80,11 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         File.createTempFile(prefix, suffix, new File(getTemporaryFilesPath()))
     }
 
+/*
     @Override
     void addToParentJobIds(String childJobId, String parentJobId) {
         workflow.addToParentJobIds(childJobId, parentJobId)
     }
-
-    // Default Workflow method implementations delegate to the Workflow instance for the script.
-    // These give the script an opportunity to override with custom logic which
-    // does not necessarily need to call up to these.
 
     @Override
     void addWarning(String message) {
@@ -183,5 +186,6 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     String getDrmaaImplementation() {
         workflow.getDrmaaImplementation()
     }
+*/
 
 }

@@ -7,28 +7,28 @@ void init(String contact) {
     super.init("jim")
 }
 
-def jt = thisScript.workflow.createJobTemplate()
+def jt = thisScript.createJobTemplate()
 
 jt.remoteCommand = "/bin/ls"
 jt.jobName = "list"
 jt.outputPath = "list_output_${JobTemplate.PARAMETRIC_INDEX}.txt"
 [1, 2, 8 /*, 9, 10, 11, 19, 20, 21, 98, 99, 100, 101, 102, 998, 999, 1000, 1001*/].each {
-    def jid = thisScript.workflow.runBulkJobs(jt, 1, it, 3)
+    def jid = thisScript.runBulkJobs(jt, 1, it, 3)
 
-    thisScript.workflow.synchronize(jid, Workflow.TIMEOUT_WAIT_FOREVER, false)
+    thisScript.synchronize(jid, Workflow.TIMEOUT_WAIT_FOREVER, false)
 
     println "1 $it ${jid.size()} $jid"
 }
 
-println "25 50 4 ${thisScript.workflow.runBulkJobs(jt, 25, 50, 4)}"
+println "25 50 4 ${thisScript.runBulkJobs(jt, 25, 50, 4)}"
 
 //println "25 51 4 ${thisScript.workflow.runBulkJobs(jt, 25, 51, 4)}"
-println "25 52 4 ${thisScript.workflow.runBulkJobs(jt, 25, 52, 4)}"
+println "25 52 4 ${thisScript.runBulkJobs(jt, 25, 52, 4)}"
 //println "25 53 4 ${thisScript.workflow.runBulkJobs(jt, 25, 53, 4)}"
-println "25 54 4 ${thisScript.workflow.runBulkJobs(jt, 25, 54, 4)}"
+println "25 54 4 ${thisScript.runBulkJobs(jt, 25, 54, 4)}"
 //println "25 55 4 ${thisScript.workflow.runBulkJobs(jt, 25, 55, 4)}"
 
-def jt2 = thisScript.workflow.createJobTemplate()
+def jt2 = thisScript.createJobTemplate()
 
 jt2.remoteCommand = "/bin/ls"
 jt2.args = ["-la", "/"]
@@ -38,11 +38,11 @@ jt2.jobName = "list_home"
 
 assert jt != jt2
 
-def jid2 = thisScript.workflow.runJob(jt2)
+def jid2 = thisScript.runJob(jt2)
 
 println jid2
 
-def jt3 = thisScript.workflow.createJobTemplate()
+def jt3 = thisScript.createJobTemplate()
 
 jt3.remoteCommand = "/bin/ls"
 jt3.args = ["-la", "/"]
@@ -51,12 +51,12 @@ jt3.joinFiles = true
 
 assert jt != jt3
 
-def id3 = thisScript.workflow.runJob(jt3)
+def id3 = thisScript.runJob(jt3)
 println id3
 
-thisScript.workflow.wait(id3, Workflow.TIMEOUT_WAIT_FOREVER)
+thisScript.wait(id3, Workflow.TIMEOUT_WAIT_FOREVER)
 
-def jt4 = thisScript.workflow.createJobTemplate()
+def jt4 = thisScript.createJobTemplate()
 
 jt4.remoteCommand = "/bin/ls"
 jt4.args = ["-la", "/"]
@@ -65,9 +65,9 @@ jt4.joinFiles = true
 
 assert jt3 == jt4
 
-println thisScript.workflow.runJob(jt4)
+println thisScript.runJob(jt4)
 
-def jt5 = thisScript.workflow.createJobTemplate()
+def jt5 = thisScript.createJobTemplate()
 
 jt5.remoteCommand = "/bin/ls"
 jt5.args = ["-zlkjd893^la", "/"]
@@ -76,4 +76,4 @@ jt5.joinFiles = true
 
 assert jt3 != jt5
 
-println thisScript.workflow.runJob(jt5)
+println thisScript.runJob(jt5)

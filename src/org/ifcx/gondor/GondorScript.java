@@ -1,22 +1,20 @@
 package org.ifcx.gondor;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyInterceptable;
-import groovy.lang.MissingMethodException;
-import groovy.lang.MissingPropertyException;
-import groovy.lang.Script;
+//import groovy.lang.Closure;
+//import groovy.lang.GroovyInterceptable;
+//import groovy.lang.MissingMethodException;
+//import groovy.lang.MissingPropertyException;
+//import org.apache.ivy.util.StringUtils;
+//import org.codehaus.groovy.runtime.MethodClosure;
+//import org.ggf.drmaa.JobTemplate;
+//
+//import java.util.ArrayList;
+//import java.util.Arrays;
+//import java.util.LinkedHashMap;
+//import java.util.List;
+//import java.util.Map;
 
-import org.apache.ivy.util.StringUtils;
-import org.codehaus.groovy.runtime.MethodClosure;
-import org.ggf.drmaa.JobTemplate;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-public abstract class GondorScript extends Script {
+public abstract class GondorScript extends JCommanderScript {
 //    abstract public Process process(Command command, Map<String, Object> params);
 
 //    @Override

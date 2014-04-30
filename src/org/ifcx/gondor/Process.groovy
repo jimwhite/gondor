@@ -1,7 +1,5 @@
 package org.ifcx.gondor
 
-import org.ggf.drmaa.JobTemplate
-
 class Process
 {
     String jobId
