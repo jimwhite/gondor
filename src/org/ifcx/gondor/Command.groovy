@@ -40,7 +40,7 @@ class Command extends Closure<Process>
         }
     }
 
-    def arg(String name, Closure pat = { it }, Object val = REQUIRED) {
+    def arg(String name, Object val = REQUIRED, Closure pat = { it }) {
         addArgumentName(name, val)
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             def v = m[name]
@@ -91,7 +91,8 @@ class Command extends Closure<Process>
 
     static File resolveFileArgument(Map map, String s) {
         def f = map[s]
-//        (f instanceof String) ? new File(f) : ((f instanceof GString) ? new File(f.toString()) : f)
+        // Don't do automatic coercion of strings to files for now to cut down on silent bugs.
+        // (f instanceof String) ? new File(f) : ((f instanceof GString) ? new File(f.toString()) : f)
         f
     }
 
@@ -99,7 +100,18 @@ class Command extends Closure<Process>
 
     WorkflowScript getWorkflowScript() { workflowScript }
 
-//    @Override
+    /**
+     * Since we allow optional arguments, we might get called with none, so handle that case
+     * and treat it as though we'd been called with an empty map.
+     */
+    Process call() {
+        call([:])
+    }
+
+    /**
+     * This is the method called when this closure is called to run this command
+     * in the workflow with the given parameter values.
+     */
     Process call(Map params) {
         workflowScript.process(this, params)
     }

@@ -13,7 +13,7 @@ import org.ifcx.gondor.Command
 
 def ls = command(path:'/bin/ls') { infile 'path' }
 
-def grep = command(path:'/usr/bin/grep') { arg 'pat', { it }, Command.REQUIRED }
+def grep = command(path:'/usr/bin/grep') { arg 'pat', Command.REQUIRED, { it } }
 
 // (ls(path:'.') | grep(pat:/Work/)) >> new File('grep_out.txt')
 (ls(path:path) | grep(pat:pat)) >> new File('grep_out.txt')
