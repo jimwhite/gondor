@@ -3,8 +3,8 @@
     <output-path>$PROJECT_DIR$/out/artifacts/condor_jdrmaa_jar</output-path>
     <root id="archive" name="condor-jdrmaa.jar">
       <element id="directory" name="META-INF">
-        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
-        <element id="dir-copy" path="$PROJECT_DIR$/META-INF/services" />
+        <element id="file-copy" path="$PROJECT_DIR$/resources/META-INF/MANIFEST.MF" />
+        <element id="dir-copy" path="$PROJECT_DIR$/resources/META-INF/services" />
       </element>
     </root>
   </artifact>
