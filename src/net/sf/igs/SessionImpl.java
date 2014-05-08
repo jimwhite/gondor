@@ -622,7 +622,7 @@ public class SessionImpl implements Session {
 			writer.newLine();
 			writer.write("Log=" + sessionDir.getPath() + File.separator + LOG_TEMPLATE);
 			writer.newLine();
-			writer.write("Universe=vanilla");
+			writer.write("Universe=local");
 			writer.newLine();
 			writer.write("Executable=" + job.getRemoteCommand());
 			writer.newLine();

@@ -14,6 +14,8 @@ package org.ifcx.gondor;
 //import java.util.List;
 //import java.util.Map;
 
+import groovyx.cli.JCommanderScript;
+
 public abstract class GondorScript extends JCommanderScript {
 //    abstract public Process process(Command command, Map<String, Object> params);
 

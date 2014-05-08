@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.ifcx.gondor;
+package groovyx.cli;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

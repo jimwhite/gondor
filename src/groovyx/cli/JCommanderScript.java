@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package org.ifcx.gondor;
+package groovyx.cli;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
+import groovyx.cli.Subcommand;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;

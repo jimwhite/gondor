@@ -89,7 +89,11 @@ class Command extends Closure<Process>
         argumentDefaultValues[name] = val
     }
 
-    static File resolveFileArgument(Map map, String s) { map[s] }
+    static File resolveFileArgument(Map map, String s) {
+        def f = map[s]
+//        (f instanceof String) ? new File(f) : ((f instanceof GString) ? new File(f.toString()) : f)
+        f
+    }
 
     static String stringifyFile(File file) { file.path }
 
