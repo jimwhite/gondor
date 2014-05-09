@@ -14,7 +14,7 @@ so you will need at least that version installed in the usual way.
 I recommend the full "sdk" distribution, but any should work fine.
 
 At present the easiest way to run the script is inside Intellij IDEA.
-You should be able to use `Open Project` on the Gondor directory and fix up the Groovy framework library reference to where you have 2.3.0 installed.
+You should be able to use `Open Project` on the `Gondor` directory and fix up the Groovy framework library reference to where you have 2.3.0 installed.
 
 An item for `TestWorkflow` should appear in the run configurations menu.  It contains these settings:
 
