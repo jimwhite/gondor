@@ -18,10 +18,10 @@ You should be able to use "Open Project" on the Gondor directory and fix up the 
 
 An item for TestWorkflow should appear in the run configurations menu.  It contains these settings:
 
-Script path: [parent]/Gondor/scripts/TestWorkflow.groovy
-Module: gondor
-VM options: -Dorg.ggf.drmaa.SessionFactory=net.sf.igs.SessionFactoryImpl -Dorg.ifcx.drmaa.WorkflowFactory=org.ifcx.gondor.WorkflowFactoryImpl
-Working dir: [parent]/Gondor/scripts
+Script path: [parent]`/Gondor/scripts/TestWorkflow.groovy`
+Module: `gondor`
+VM options: `-Dorg.ggf.drmaa.SessionFactory=net.sf.igs.SessionFactoryImpl -Dorg.ifcx.drmaa.WorkflowFactory=org.ifcx.gondor.WorkflowFactoryImpl`
+Working dir: [parent]`/Gondor/scripts`
 
 The reason for running inside IntelliJ is setting the classpath, but that can be done from the command line as well.  I've just updated the Gradle build, so in the Gondor dir you could do:
 
