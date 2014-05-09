@@ -9,7 +9,7 @@ def grep = command(path:'/usr/bin/grep') {
     // An optional argument for whether the output should have numbered lines.
     // The third argument here is a closure that takes the given parameter value
     // and returns the string that will appear as the command line argument.
-    arg 'lineNumbers', Command.OPTIONAL, { it ? '--line-number' : '' }
+    arg 'lineNumbers', Command.OPTIONAL, { it ? '--line-number' : [] }
 
     // Arguments are currently optional by default.
     // Here that is overridden as required, but the default formatter is used.

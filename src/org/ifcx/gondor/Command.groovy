@@ -34,9 +34,21 @@ class Command extends Closure<Process>
     Map<String, Object> argumentDefaultValues = [:]
     List<Closure> args = []
 
-    def flag(String lit) {
+    def flag(String lit, Closure pat = { it }) {
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
-            a << lit
+            switch (pat.maximumNumberOfParameters) {
+                case 1 : addArguments(a, pat(lit)) ; break
+                case 2 : addArguments(a, pat(m, lit)) ; break
+                default : addArguments(a, pat(p, m, lit))
+            }
+        }
+    }
+
+    def flag(Map m) {
+        if (m.containsKey('format')) {
+            flag(m.value, (Closure) m.format)
+        } else {
+            flag((String) m.value)
         }
     }
 
@@ -47,34 +59,64 @@ class Command extends Closure<Process>
             if (v.is(REQUIRED)) {
                 System.err.println "Warning: Missing argument value for '$name' in command ${getCommandPath()}"
             } else if (!v.is(OPTIONAL)) {
-                a << pat(v).toString()
+                addArguments(a, pat(v))
             }
         }
     }
 
     def arg(Map m) {
-        arg(m.name, m.pat, m.val)
+        if (m.containsKey('format')) {
+            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, (Closure) m.format)
+        } else {
+            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED)
+        }
     }
 
-    def infile(String name, File val = null) {
+    def infile(String name, File val = null, Closure pat = { File f -> f.path }) {
         addArgumentName(name, val)
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             File f = resolveFileArgument(m, name)
+            if (val != null && val != f) {
+                System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
+            }
             if (f != null) {
                 p.infiles << f
-                a << stringifyFile(f)
+                addArguments(a, pat(f))
             }
         }
     }
 
-    def outfile(String name, File val = null) {
+    def infile(String name, Closure<List<String>> pat) { infile(name, null, pat) }
+
+    def infile(Map m) {
+        if (m.containsKey('format')) {
+            infile((String) m.name, m.containsKey('value') ? (File) m.value : null, (Closure) m.format)
+        } else {
+            infile((String) m.name, m.containsKey('value') ? (File) m.value : null)
+        }
+    }
+
+    def outfile(String name, File val = null, Closure pat = { File f -> f.path }) {
         addArgumentName(name, val)
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             File f = resolveFileArgument(m, name)
+            if (val != null && val != f) {
+                System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
+            }
             if (f != null) {
                 p.outfiles << f
-                a << stringifyFile(f)
+                addArguments(a, pat(f))
             }
+        }
+    }
+
+    def outfile(String name, Closure<List<String>> pat) { outfile(name, null, pat) }
+
+    def outfile(Map m) {
+        if (m.containsKey('format')) {
+            outfile((String) m.name, m.containsKey('value') ? (File) m.value : null, (Closure) m.format)
+        } else {
+            outfile((String) m.name, m.containsKey('value') ? (File) m.value : null)
         }
     }
 
@@ -96,7 +138,15 @@ class Command extends Closure<Process>
         f
     }
 
-    static String stringifyFile(File file) { file.path }
+    static void addArguments(List<String> a, def v) {
+        if (v instanceof Collection) {
+            v.each { a << (v as String)}
+        }  else {
+            a << (v as String)
+        }
+    }
+
+//    static String stringifyFile(File file) { file.path }
 
     WorkflowScript getWorkflowScript() { workflowScript }
 

@@ -28,10 +28,10 @@ workflowScript.with {
 
     def parse_nbest = command(path:'first-stage/PARSE/parseIt') {
         flag "-K"
-        arg "opt", { "--opt=$it" }, Command.OPTIONAL
+        arg "opt", Command.OPTIONAL, { "--opt=$it" }
 //        flag "-l400"
-        arg "def", {"-l$it"}, 400
-        arg "n", {"-N$it"}, Command.REQUIRED
+        arg "def", 400, {"-l$it"}
+        arg "n", Command.REQUIRED, {"-N$it"}
         arg "m", {"-NN$it"}
 //        arg "n", { assert it && "n is required for parseIt" ; "-N$it"}
         arg "foo"

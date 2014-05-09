@@ -31,7 +31,7 @@ class Process
     Process or(Process sink) { toProcess(sink) }
 
     Process toProcess(Process sink) {
-        sink.fromFile(stdout)
+        sink.fromFile(output)
     }
 
     Process leftShift(File source) { fromFile(source) }
@@ -43,7 +43,7 @@ class Process
         this
     }
 
-    File getStdin() {
+    File getInput() {
         if (!_stdin) {
             fromFile(command.newTemporaryFile(".in"))
         }
@@ -59,25 +59,25 @@ class Process
         this
     }
 
-    File getStdout() {
+    File getOutput() {
         if (!_stdout) {
             toFile(command.newTemporaryFile(".out"))
         }
         _stdout
     }
 
-    Process rightShiftUnsigned(File sink) { errFile(sink) }
+    Process rightShiftUnsigned(File sink) { errorFile(sink) }
 
-    Process errFile(File sink) {
+    Process errorFile(File sink) {
         if (_stderr) throw new IllegalStateException("stderr already set")
         _stderr = sink
         outfiles << _stderr
         this
     }
 
-    File getStderr() {
+    File getError() {
         if (!_stderr) {
-            errFile(command.newTemporaryFile(".err"))
+            errorFile(command.newTemporaryFile(".err"))
         }
         _stderr
     }
