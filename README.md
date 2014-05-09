@@ -25,7 +25,8 @@ VM options: -Dorg.ggf.drmaa.SessionFactory=net.sf.igs.SessionFactoryImpl -Dorg.i
 Working dir: [parent]/Gondor/scripts
 ```
 
-The reason for running inside IntelliJ is setting the classpath, but that can be done from the command line as well.  I've just updated the Gradle build, so in the Gondor dir you could do:
+The reason for running inside IntelliJ is setting the classpath, but that can be done from the command line as well.  
+There is a Gradle build, so in the `Gondor` dir you can do:
 
 ```
 $ gradle jar
