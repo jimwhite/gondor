@@ -25,7 +25,8 @@ Working dir: [parent]/Gondor/scripts
 
 The reason for running inside IntelliJ is setting the classpath, but that can be done from the command line as well.  I've just updated the Gradle build, so in the Gondor dir you could do:
 
-```$ gradle jar
+```
+$ gradle jar
 :compileJava UP-TO-DATE
 :compileGroovy
 warning: [options] bootstrap class path not set in conjunction with -source 1.6
@@ -50,4 +51,5 @@ That should generate a file TestWorkflow.dag and a directory TestWorkflow.jobs.
 
 The DAGman workflow can then be submitted in the usual way:
 
-$ condor_submit_dag TestWorkflow.dag```
+$ condor_submit_dag TestWorkflow.dag
+```
