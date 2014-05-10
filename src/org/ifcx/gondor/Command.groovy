@@ -148,12 +148,12 @@ class Command extends Closure<Process>
         f instanceof Collection ? f : [f]
     }
 
+    public static List<String> stringify(v) {
+        v instanceof Collection ? v.flatten().collect { it as String } : [v as String]
+    }
+
     static void addArguments(List<String> a, def v) {
-        if (v instanceof Collection) {
-            v.flatten().each { a << (it as String) }
-        }  else {
-            a << (v as String)
-        }
+        a.addAll(stringify(v))
     }
 
 //    static String stringifyFile(File file) { file.path }

@@ -21,7 +21,9 @@ def grep = command(path:'/usr/bin/grep') {
     // Arguments are currently optional by default, but ere that is overridden as required.
     // The formatting closure may return a list of strings rather than just one.
     // That is used here to provide the '-e' flag and it's associated pattern value.
-    arg 'pat', Command.REQUIRED, { ['-e', it as String] }
+    // Note that grep permits multiple patterns, so we return a list of those pairs.
+    // The stringify(v) helper returns its argument as a flattened list of string values.
+    arg 'pat', Command.REQUIRED, { stringify(it).collect { ['-e', it] } }
 }
 
 def cat = command(path:'/bin/cat') { infile 'paths' }
