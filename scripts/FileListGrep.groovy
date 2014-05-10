@@ -18,10 +18,10 @@ def grep = command(path:'/usr/bin/grep') {
     // and returns the string that will appear as the command line argument.
     arg 'lineNumbers', Command.OPTIONAL, { it ? '--line-number' : [] }
 
-    // Arguments are currently optional by default.
-    // Here that is overridden as required, but the default formatter is used.
-    // The default is { it } which simply uses the string representation of the object.
-    arg 'pat', Command.REQUIRED
+    // Arguments are currently optional by default, but ere that is overridden as required.
+    // The formatting closure may return a list of strings rather than just one.
+    // That is used here to provide the '-e' flag and it's associated pattern value.
+    arg 'pat', Command.REQUIRED, { ['-e', it as String] }
 }
 
 def cat = command(path:'/bin/cat') { infile 'paths' }
@@ -42,4 +42,4 @@ def cat = command(path:'/bin/cat') { infile 'paths' }
 
 // (ls() | grep(pat:/est/, lineNumbers:true)) >> new File('grep_with_numbers.txt')
 
-cat(paths:[path, *paths].collect { (ls(path:it) | grep(pat:pattern)).output }) >> result
+cat(paths:[path, *paths].collect { (ls(path:it) | grep(pat:pattern, lineNumbers:true)).output }) >> result

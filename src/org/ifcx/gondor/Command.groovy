@@ -59,7 +59,10 @@ class Command extends Closure<Process>
             if (v.is(REQUIRED)) {
                 System.err.println "Warning: Missing argument value for '$name' in command ${getCommandPath()}"
             } else if (!v.is(OPTIONAL)) {
-                addArguments(a, pat(v))
+                (v instanceof Collection ? v.flatten() : [v]).each { addArguments(a, pat(it)) }
+//                    def vs = pat(it)
+//                    (vs instanceof Collection ? vs.flatten() : [vs]).each { addArguments(a, it) }
+//                }
             }
         }
     }
@@ -147,7 +150,7 @@ class Command extends Closure<Process>
 
     static void addArguments(List<String> a, def v) {
         if (v instanceof Collection) {
-            v.each { a << (v as String)}
+            v.flatten().each { a << (it as String) }
         }  else {
             a << (v as String)
         }
