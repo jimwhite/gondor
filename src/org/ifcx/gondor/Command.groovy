@@ -75,11 +75,10 @@ class Command extends Closure<Process>
     def infile(String name, File val = null, Closure pat = { File f -> f.path }) {
         addArgumentName(name, val)
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
-            File f = resolveFileArgument(m, name)
-            if (val != null && val != f) {
-                System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
-            }
-            if (f != null) {
+            resolveFileArgument(m, name).each { File f ->
+                if (val != null) {
+                    System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
+                }
                 p.infiles << f
                 addArguments(a, pat(f))
             }
@@ -131,11 +130,19 @@ class Command extends Closure<Process>
         argumentDefaultValues[name] = val
     }
 
-    static File resolveFileArgument(Map map, String s) {
+    /**
+     * Get the value(s) supplied for a file argument.
+     * If the given value is a single File it is boxed up as a List<File>.
+     *
+     * @param map
+     * @param s
+     * @return
+     */
+    static def resolveFileArgument(Map map, String s) {
         def f = map[s]
         // Don't do automatic coercion of strings to files for now to cut down on silent bugs.
         // (f instanceof String) ? new File(f) : ((f instanceof GString) ? new File(f.toString()) : f)
-        f
+        f instanceof Collection ? f : [f]
     }
 
     static void addArguments(List<String> a, def v) {
