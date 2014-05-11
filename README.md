@@ -8,6 +8,8 @@ reproducible computation.
 There are some sample scripts in the scripts directory.  `TestWorkflow.groovy` is a functioning workflow that runs a
 couple jobs using `/bin/ls` and `/usr/bin/grep`.  `HelloGondor.groovy` and `GoodGondor.groovy` illustrate some of the API.
 
+* NEW: `FileListGrepCommand.groovy` is a Groovy script using JCommander CLI and Gradle Task annotations.  `FileListGrepWorkflow.groovy` is a workflow that calls that command as well as the binary commands as in `TestWorkflow.groovy`.  The API will be changing significantly soon though, primarily the addition of Gondor CLI annotations which will be preferred over the JCommander + Gradle annotations.
+
 Gondor depends on features [Groovy](http://groovy.codehaus.org/Download) that are new in the 2.3.0 release,
 so you will need at least that version installed in the usual way.
 I recommend the full "sdk" distribution, but any should work fine.
