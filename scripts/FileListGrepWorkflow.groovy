@@ -44,4 +44,8 @@ def cat = command(path:'/bin/cat') { infile 'paths' }
 
 // (ls() | grep(pat:/est/, lineNumbers:true)) >> new File('grep_with_numbers.txt')
 
-cat(paths:[path, *paths].collect { (ls(path:it) | grep(pat:pattern, lineNumbers:true)).output }) >> result
+cat(paths:[path, *paths].collect { (ls(path:it) | grep(pat:pattern, lineNumbers:true)).output }) >> new File("bin-${result.name}")
+
+def fileListGrep = groovy(path:"../scripts/FileListGrepCommand.groovy")
+
+fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths)

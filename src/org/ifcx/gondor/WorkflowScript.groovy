@@ -47,6 +47,10 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         new Command(this, params.path, description)
     }
 
+    public Command groovy(Map params) {
+        new Command(this, params.path, { _groovy() })
+    }
+
     public Process process(Command command, Map<String, Object> params) {
         def p = command.getArgumentDefaultValues().collectEntries { k, v -> [k, params.containsKey(k) ? params[k] : v]}
         Process process = new Process(command:command, params:p)

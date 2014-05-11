@@ -1,3 +1,5 @@
+#!/usr/bin/env CLASSPATH=/Users/jim/Projects/Gondor/build/libs/Gondor-0.1.jar:/Users/jim/Projects/Gradle/gradle-1.11/lib/gradle-core-1.11.jar /Users/jim/Projects/Groovy/groovy-2.3.0/bin/groovy
+
 import com.beust.jcommander.Parameter
 import groovy.transform.Field
 import groovyx.cli.JCommanderScript
@@ -31,3 +33,4 @@ result.withPrintWriter {
     [path, *paths].each { File dir -> dir.listFiles().name.findAll { it =~ pattern  }.each { println it } }
 }
 
+0
