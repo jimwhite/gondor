@@ -13,7 +13,7 @@ def ls = command(path:'/bin/ls') { infile 'path' }
 
 // Note that the exit status for grep is 1 if there are no matched lines.
 // Gondor does not yet have an option for treating non-zero exit status values as an indication of success.
-def grep = command(exec:'grep') {
+def grep = command(path:'/usr/bin/grep') {
     // An optional argument for whether the output should have numbered lines.
     // The third argument here is a closure that takes the given parameter value
     // and returns the string that will appear as the command line argument.
