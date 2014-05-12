@@ -1,9 +1,10 @@
+#!/usr/bin/env CLASSPATH=../build/libs/Gondor-0.1.jar groovy
+
 import com.beust.jcommander.Parameter
 import groovy.transform.Field
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.OutputFile
 import org.ifcx.gondor.Command
+import org.ifcx.gondor.api.InputDirectory
+import org.ifcx.gondor.api.OutputFile
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
 
@@ -12,7 +13,7 @@ def ls = command(path:'/bin/ls') { infile 'path' }
 
 // Note that the exit status for grep is 1 if there are no matched lines.
 // Gondor does not yet have an option for treating non-zero exit status values as an indication of success.
-def grep = command(path:'/usr/bin/grep') {
+def grep = command(exec:'grep') {
     // An optional argument for whether the output should have numbered lines.
     // The third argument here is a closure that takes the given parameter value
     // and returns the string that will appear as the command line argument.
@@ -48,4 +49,4 @@ cat(paths:[path, *paths].collect { (ls(path:it) | grep(pat:pattern, lineNumbers:
 
 def fileListGrep = groovy(path:"../scripts/FileListGrepCommand.groovy")
 
-fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths)
+fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths) >>> new File('flsgrep-err.txt')

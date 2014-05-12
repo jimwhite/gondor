@@ -1,4 +1,4 @@
-#!/usr/env groovy
+#!/usr/bin/env groovy
 
 import com.beust.jcommander.Parameter
 import groovy.transform.Field

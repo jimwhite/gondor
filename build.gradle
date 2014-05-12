@@ -29,7 +29,7 @@ dependencies {
     compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.0'
     compile 'com.beust:jcommander:1.35'
     // compile 'org.gradle:gradle-core:1.11'
-    compile files('/Users/jim/Projects/Gradle/gradle-1.11/lib/gradle-core-1.11.jar')
+    // compile files('/Users/jim/Projects/Gradle/gradle-1.11/lib/gradle-core-1.11.jar')
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
