@@ -54,9 +54,10 @@ class Command extends Closure<Process>
     def flag(String lit, Closure pat = { it }) {
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             switch (pat.maximumNumberOfParameters) {
+                case 0 : addArguments(a, pat()) ; break
                 case 1 : addArguments(a, pat(lit)) ; break
-                case 2 : addArguments(a, pat(m, lit)) ; break
-                default : addArguments(a, pat(p, m, lit))
+                case 2 : addArguments(a, pat(lit, m)) ; break
+                default : addArguments(a, pat(lit, m, p))
             }
         }
     }
