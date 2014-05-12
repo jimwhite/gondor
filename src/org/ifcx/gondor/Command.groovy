@@ -1,15 +1,16 @@
 package org.ifcx.gondor
 
 import com.beust.jcommander.Parameter
+
 import org.ggf.drmaa.JobTemplate
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
+
+import org.ifcx.gondor.api.InputDirectory
+import org.ifcx.gondor.api.InputFile
+import org.ifcx.gondor.api.OutputDirectory
+import org.ifcx.gondor.api.OutputFile
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Field
-
 
 // first-stage/PARSE/parseIt -l399 -N50 first-stage/DATA/EN/ $*
 // parse_nbest = gondor.condor_command(new File(bllip_dir, 'first-stage/PARSE/parseIt'), ['-K.flag', '-l400.flag', '-N50.flag', 'model.in', 'input.in'])
@@ -19,7 +20,6 @@ import java.lang.reflect.Field
 //
 // parse_nbest(model:PARSER_MODEL, input:charniak_input, stdout:nbest_output)
 // rerank_parses(features: RERANKER_FEATURES, weights: RERANKER_WEIGHTS, stdin:nbest_output, stdout:reranker_output)
-
 
 class Command extends Closure<Process>
 {

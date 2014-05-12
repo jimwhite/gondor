@@ -1,10 +1,10 @@
-#!/usr/bin/env CLASSPATH=/Users/jim/Projects/Gondor/build/libs/Gondor-0.1.jar:/Users/jim/Projects/Gradle/gradle-1.11/lib/gradle-core-1.11.jar /Users/jim/Projects/Groovy/groovy-2.3.0/bin/groovy
+#!/usr/bin/env CLASSPATH=../build/libs/Gondor-0.1.jar /Users/jim/Projects/Groovy/groovy-2.3.0/bin/groovy
 
 import com.beust.jcommander.Parameter
 import groovy.transform.Field
 import groovyx.cli.JCommanderScript
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.OutputFile
+import org.ifcx.gondor.api.InputDirectory
+import org.ifcx.gondor.api.OutputFile
 
 import java.util.regex.Pattern
 
