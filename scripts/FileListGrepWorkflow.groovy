@@ -19,6 +19,8 @@ def grep = command(path:'/usr/bin/grep') {
     // and returns the string that will appear as the command line argument.
     arg 'lineNumbers', Command.OPTIONAL, { it ? '--line-number' : [] }
 
+    arg 'ignoreCase', Command.OPTIONAL, { it ? '--ignore-case' : [] }
+
     // Arguments are currently optional by default, but ere that is overridden as required.
     // The formatting closure may return a list of strings rather than just one.
     // That is used here to provide the '-e' flag and it's associated pattern value.
@@ -45,7 +47,8 @@ def cat = command(path:'/bin/cat') { infile 'paths' }
 
 // (ls() | grep(pat:/est/, lineNumbers:true)) >> new File('grep_with_numbers.txt')
 
-cat(paths:[path, *paths].collect { (ls(path:it) | grep(pat:pattern, lineNumbers:true)).output }) >> new File("bin-${result.name}")
+cat(paths:[path, *paths].collect { (ls(path:it) |
+        grep(pat:pattern, ignoreCase:true, lineNumbers:true)).output }) >> new File("bin-${result.name}")
 
 def fileListGrep = groovy(path:"../scripts/FileListGrepCommand.groovy")
 
