@@ -1,8 +1,10 @@
 package org.ifcx.gondor
 
+import com.beust.jcommander.Parameter
 import org.ggf.drmaa.JobTemplate
 import org.ifcx.drmaa.Workflow
 import org.ifcx.drmaa.WorkflowFactory
+import org.ifcx.gondor.api.OutputFile
 
 public abstract class WorkflowScript extends GondorScript implements Workflow {
     /**
@@ -12,6 +14,12 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
      */
     @Delegate
     Workflow workflow
+
+    @Parameter(names=['workflowName'])
+    String workflowName = this.getClass().name
+
+    @Parameter(names=['output'])
+    @OutputFile File dagFile = new File(workflowName + '.dag')
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
@@ -24,7 +32,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         // Waiting until we're run means that script class initializers can't use any of the delegated methods.
         setWorkflow(WorkflowFactory.getFactory().getWorkflow())
 
-        setWorkflowName(this.getClass().name)
+        workflow.setWorkflowName(workflowName)
 
 //        setTemporaryFilesPath(workflowName + '.jobs')
 
@@ -37,7 +45,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
             addWorkflowDependencies()
 
-            createDAGFile(new File(workflowName + '.dag'))
+            createDAGFile(dagFile)
         } finally {
             exit()
         }
@@ -84,6 +92,14 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         File.createTempFile(prefix, suffix, new File(getTemporaryFilesPath()))
     }
 
+    @Override
+    void setWorkflowName(String name) {
+        // Can't change workflow name after class initialization.
+        // Specify a different name on the command line if you want a different name than the default (class name).
+        throw new IllegalStateException("Error: Attepmt to change workflow name from $workflowName to $name after initialization.")
+    }
+
+
 /*
     @Override
     void addToParentJobIds(String childJobId, String parentJobId) {
@@ -109,11 +125,6 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     @Override
     String getWorkflowName() {
         workflow.getWorkflowName()
-    }
-
-    @Override
-    void setWorkflowName(String name) {
-        workflow.setWorkflowName(name)
     }
 
     @Override
