@@ -17,6 +17,8 @@
 package groovyx.cli;
 
 import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
 
 import groovy.lang.MissingPropertyException;
@@ -53,11 +55,20 @@ abstract public class JCommanderScript extends Script {
         JCommander jc = getScriptJCommanderWithInit();
         try {
             parseScriptArguments(jc, args);
+            for (ParameterDescription pd : jc.getParameters()) {
+                if (pd.isHelp() && pd.isAssigned()) return exitCode(printHelpMessage(jc, args));
+            }
             runScriptCommand(jc);
-            return runScriptBody();
+            return exitCode(runScriptBody());
         } catch (ParameterException pe) {
-            return handleParameterException(jc, args, pe);
+            return exitCode(handleParameterException(jc, args, pe));
         }
+    }
+
+    public Object exitCode(Object code) {
+        Integer codeValue = code instanceof Integer ? (Integer) code : Integer.parseInt(code.toString());
+        if (codeValue != 0) System.exit(codeValue);
+        return codeValue;
     }
 
     public String[] getScriptArguments() {
@@ -189,31 +200,51 @@ abstract public class JCommanderScript extends Script {
     /**
      * If a ParameterException occurs during parseScriptArguments, runScriptCommand, or runScriptBody
      * then this gets called to report the problem.
-     * The default behavior is to show the arguments and the JCommander.usage using printErrorMessage.
+     * The default behavior is to show the exception message using printErrorMessage, then call printHelpMessage.
      * The return value becomes the return value for the Script.run which will be the exit code
      * if we've been called from the command line.
      *
      * @param jc The JCommander instance
      * @param args The argument array
      * @param pe The ParameterException that occurred
-     * @return The value that Script.run should return.
+     * @return The value that Script.run should return (2 by default).
      */
     public Object handleParameterException(JCommander jc, String[] args, ParameterException pe) {
         StringBuilder sb = new StringBuilder();
-
-        sb.append(pe.getMessage());
-        sb.append("\n");
 
         sb.append("args: [");
         sb.append(join(args, ", "));
         sb.append("]");
         sb.append("\n");
 
+        sb.append(pe.getMessage());
+
+        printErrorMessage(sb.toString());
+
+        printHelpMessage(jc, args);
+
+        return 3;
+    }
+
+    /**
+     * If a @Parameter whose help attribute is annotated as true appears in the arguments.
+     * then the script body is not run and this printHelpMessage method is called instead.
+     * The default behavior is to show the arguments and the JCommander.usage using printErrorMessage.
+     * The return value becomes the return value for the Script.run which will be the exit code
+     * if we've been called from the command line.
+     *
+     * @param jc The JCommander instance
+     * @param args The argument array
+     * @return The value that Script.run should return (1 by default).
+     */
+    public Object printHelpMessage(JCommander jc, String[] args) {
+        StringBuilder sb = new StringBuilder();
+
         jc.usage(sb);
 
         printErrorMessage(sb.toString());
 
-        return -1;
+        return 2;
     }
 
 }
