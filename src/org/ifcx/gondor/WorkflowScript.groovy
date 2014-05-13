@@ -4,6 +4,7 @@ import com.beust.jcommander.Parameter
 import org.ggf.drmaa.JobTemplate
 import org.ifcx.drmaa.Workflow
 import org.ifcx.drmaa.WorkflowFactory
+import org.ifcx.gondor.api.Initializer
 import org.ifcx.gondor.api.OutputFile
 
 public abstract class WorkflowScript extends GondorScript implements Workflow {
@@ -16,9 +17,13 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     Workflow workflow
 
     @Parameter(names=['workflowName'])
+//    @Initializer({ it.getClass().name })
+    @Initializer({ -> workflowName })
     String workflowName = this.getClass().name
 
     @Parameter(names=['output'])
+//    @Initializer({ new File(it.workflowName + '.dag') })
+    @Initializer({ -> dagFile })
     @OutputFile File dagFile = new File(workflowName + '.dag')
 
     List<Process> processes = []
@@ -62,6 +67,11 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     public Process process(Command command, Map<String, Object> params) {
         def p = command.getArgumentDefaultValues().collectEntries { k, v -> [k, params.containsKey(k) ? params[k] : v]}
         Process process = new Process(command:command, params:p)
+
+        if (p.containsKey('input')) process.fromFile((File) p['input'])
+        if (p.containsKey('output')) process.toFile((File) p['output'])
+        if (p.containsKey('error')) process.errorFile((File) p['error'])
+
         processes.add(process)
         process
     }
@@ -93,12 +103,17 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     }
 
     @Override
+    String getWorkflowName() {
+        workflowName
+    }
+
+    @Override
     void setWorkflowName(String name) {
         // Can't change workflow name after class initialization.
         // Specify a different name on the command line if you want a different name than the default (class name).
+        // The reason is that the value for dagFile, the name of the output must be determined prior to run time.
         throw new IllegalStateException("Error: Attepmt to change workflow name from $workflowName to $name after initialization.")
     }
-
 
 /*
     @Override
@@ -120,11 +135,6 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     void init(String contact) throws DrmaaException
     {
         workflow.init(contact)
-    }
-
-    @Override
-    String getWorkflowName() {
-        workflow.getWorkflowName()
     }
 
     @Override

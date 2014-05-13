@@ -3,7 +3,7 @@ package org.ifcx.gondor
 import com.beust.jcommander.Parameter
 
 import org.ggf.drmaa.JobTemplate
-
+import org.ifcx.gondor.api.Initializer
 import org.ifcx.gondor.api.InputDirectory
 import org.ifcx.gondor.api.InputFile
 import org.ifcx.gondor.api.OutputDirectory
@@ -120,8 +120,8 @@ class Command extends Closure<Process>
         addArgumentName(name, val)
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             resolveFileArgument(m, name).each { File f ->
-                if (val != null) {
-                    System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
+                if (val != null && val != f) {
+                    System.err.println "Warning: File argument ${name}  in command ${getCommandPath()}  must have value $val but is given $f"
                 }
                 p.outfiles << f
                 addArguments(a, pat(f))
@@ -162,7 +162,7 @@ class Command extends Closure<Process>
         def f = map[s]
         // Don't do automatic coercion of strings to files for now to cut down on silent bugs.
         // (f instanceof String) ? new File(f) : ((f instanceof GString) ? new File(f.toString()) : f)
-        f instanceof Collection ? f : (f != null ? [f] : null)
+        f instanceof Collection ? f.flatten() : (f != null ? [f] : null)
     }
 
     public static List<String> stringify(v) {
@@ -179,10 +179,22 @@ class Command extends Closure<Process>
     def _groovy() {
         println "Inspecting Groovy command $commandPath"
 
-        def parameters = getParameterAnnotations()
+        GroovyShell shell = new GroovyShell()
+        Script script = shell.parse(new File(commandPath))
+        Class scriptClass = script.getClass();
+
+        def parameters = getParameterAnnotations(scriptClass)
 
         if (parameters) {
-            parameters.each { println it }
+            parameters.each {
+                println it
+                Class initializer = it.initializer?.value()
+                if (initializer) {
+                    def val = (initializer.newInstance(script, script)).call()
+                    println(val)
+                    it.value = val
+                }
+            }
             println "${parameters.size()} parameters"
 
 //            // If there is an varargs (unnamed) parameter, put it at the end.
@@ -196,12 +208,18 @@ class Command extends Closure<Process>
                     if (parameter.outfile) {
                         System.err.println "Error: Parameter ${it.name} in $commandPath is marked as both an infile and an outfile."
                     }
-                    parameter.name ? infile(name:name, format: {[name, it]}) : infile(name:name)
+                    def value = null
+                    if (parameter.initializer) value = parameter.value
+                    parameter.name ? infile(name:name, value:value, format: {[name, it]}) : infile(name:name)
                 } else if (parameter.outfile) {
-                    parameter.name ? outfile(name:name, format: {[name, it]}) : outfile(name:name)
+                    def value = null
+                    if (parameter.initializer) value = parameter.value
+                    parameter.name ? outfile(name:name, value:value, format: {[name, it]}) : outfile(name:name)
                 } else {
                     if (parameter.name) {
-                        arg(name: name, value:parameter.required ? REQUIRED : OPTIONAL, format:{ [name, it] })
+                        def value = parameter.required ? REQUIRED : OPTIONAL
+                        if (parameter.initializer) value = parameter.value
+                        arg(name: name, value: value, format:{ [name, it] })
                     } else {
                         arg(name:VARARGS_PARAMETER_NAME, value:parameter.required ? REQUIRED : OPTIONAL)
                     }
@@ -210,11 +228,8 @@ class Command extends Closure<Process>
         }
     }
 
-    def getParameterAnnotations() {
+    def getParameterAnnotations(Class cls) {
         def parameters = []
-        GroovyShell shell = new GroovyShell()
-        Script script = shell.parse(new File(commandPath))
-        Class cls = script.getClass();
         while (cls != null) {
             Field[] fields = cls.declaredFields;
             for (Field field : fields) {
@@ -226,7 +241,8 @@ class Command extends Closure<Process>
                     def name = annotation.names()?.size() ? annotation.names().first() : null
                     def infile = (field.getAnnotation(InputFile.class) != null || field.getAnnotation(InputDirectory.class) != null )
                     def outfile = (field.getAnnotation(OutputFile.class) != null || field.getAnnotation(OutputDirectory.class) != null )
-                    parameters << [name: name, required:annotation.required(), infile:infile, outfile:outfile]
+                    def initializer = field.getAnnotation(Initializer.class)
+                    parameters << [name: name, required:annotation.required(), initializer:initializer, infile:infile, outfile:outfile]
                 }
             }
 
@@ -280,9 +296,10 @@ class Command extends Closure<Process>
         }
         jt.args = jobArgs
 
-        if (process._stdin != null) jt.setInputPath(process._stdin.path)
-        if (process._stdout != null) jt.setOutputPath(process._stdout.path)
-        if (process._stderr != null) jt.setErrorPath(process._stderr.path)
+        // Don't redirect these for files that the executable will create itself.
+        if (process._stdin != null && !getArgumentDefaultValues().containsKey('input')) jt.setInputPath(process._stdin.path)
+        if (process._stdout != null && !getArgumentDefaultValues().containsKey('output')) jt.setOutputPath(process._stdout.path)
+        if (process._stderr != null && !getArgumentDefaultValues().containsKey('error')) jt.setErrorPath(process._stderr.path)
 
         if (jobTemplateCustomizer) jobTemplateCustomizer(jt)
 
