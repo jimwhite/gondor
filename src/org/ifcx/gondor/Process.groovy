@@ -11,9 +11,27 @@ class Process
     List<File> infiles = []
     List<File> outfiles = []
 
-    private File _stdin
-    private File _stdout
-    private File _stderr
+    Map<String, Object> attributes = [:]
+
+    Set<String> psuedo_io = []
+
+    public final static String INPUT = ":input";
+    public final static String OUTPUT = ":output";
+    public final static String STDERR = ":error";
+
+    public Process(Command command, Map<String, Object> params) {
+        this.command = command
+        this.params = params
+        initializeAttributes()
+    }
+
+    void initializeAttributes() {
+
+    }
+
+    public boolean isStdioFileUsed(String name) { attributes.containsKey(name) }
+    public boolean isPsuedoStdioFile(String name) { psuedo_io.contains(name) }
+    public void setPsuedoStdioFile(String name) { psuedo_io.add(name) }
 
     @Override
     public Object getProperty(String property) {
@@ -37,49 +55,49 @@ class Process
     Process leftShift(File source) { fromFile(source) }
 
     Process fromFile(File source) {
-        if (_stdin) throw new IllegalStateException("stdin already set")
-        _stdin = source
-        infiles << _stdin
+        if (attributes[INPUT]) throw new IllegalStateException("stdin already set")
+        attributes[INPUT] = source
+        infiles << source
         this
     }
 
     File getInput() {
-        if (!_stdin) {
+        if (!attributes[INPUT] != null) {
             fromFile(command.newTemporaryFile(".in"))
         }
-        _stdin
+        (File) attributes[INPUT]
     }
 
     Process rightShift(File sink) { toFile(sink) }
 
     Process toFile(File sink) {
-        if (_stdout) throw new IllegalStateException("stdout already set")
-        _stdout = sink
-        outfiles << _stdout
+        if (attributes[OUTPUT] != null) throw new IllegalStateException("stdout already set")
+        attributes[OUTPUT] = sink
+        outfiles << sink
         this
     }
 
     File getOutput() {
-        if (!_stdout) {
+        if (attributes[OUTPUT] == null) {
             toFile(command.newTemporaryFile(".out"))
         }
-        _stdout
+        (File) attributes[OUTPUT]
     }
 
     Process rightShiftUnsigned(File sink) { errorFile(sink) }
 
     Process errorFile(File sink) {
-        if (_stderr) throw new IllegalStateException("stderr already set")
-        _stderr = sink
-        outfiles << _stderr
+        if (attributes[STDERR] != null) throw new IllegalStateException("stderr already set")
+        attributes[STDERR] = sink
+        outfiles << sink
         this
     }
 
     File getError() {
-        if (!_stderr) {
+        if (attributes[STDERR] == null) {
             errorFile(command.newTemporaryFile(".err"))
         }
-        _stderr
+        (File) attributes[STDERR]
     }
 
 }

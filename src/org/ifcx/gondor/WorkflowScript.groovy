@@ -18,13 +18,14 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     @Parameter(names=['workflowName'])
 //    @Initializer({ it.getClass().name })
-    @Initializer({ -> workflowName })
+//    @Initializer({ workflowName })
     String workflowName = this.getClass().name
 
-    @Parameter(names=['output'])
+//    @Parameter(names=['output'])
 //    @Initializer({ new File(it.workflowName + '.dag') })
-    @Initializer({ -> dagFile })
-    @OutputFile File dagFile = new File(workflowName + '.dag')
+//    @Initializer({ -> dagFile })
+    @Initializer({ new File(workflowName + '.dag') })
+    @OutputFile(name=Process.OUTPUT) File dagFile = new File(workflowName + '.dag')
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
@@ -66,12 +67,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     public Process process(Command command, Map<String, Object> params) {
         def p = command.getArgumentDefaultValues().collectEntries { k, v -> [k, params.containsKey(k) ? params[k] : v]}
-        Process process = new Process(command:command, params:p)
-
-        if (p.containsKey('input')) process.fromFile((File) p['input'])
-        if (p.containsKey('output')) process.toFile((File) p['output'])
-        if (p.containsKey('error')) process.errorFile((File) p['error'])
-
+        Process process = new Process(command, p)
         processes.add(process)
         process
     }

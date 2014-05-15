@@ -66,6 +66,7 @@ abstract public class JCommanderScript extends Script {
     }
 
     public Object exitCode(Object code) {
+        if (code == null) code = 0;
         Integer codeValue = code instanceof Integer ? (Integer) code : Integer.parseInt(code.toString());
         if (codeValue != 0) System.exit(codeValue);
         return codeValue;

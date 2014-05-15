@@ -197,11 +197,6 @@ class Command extends Closure<Process>
             }
             println "${parameters.size()} parameters"
 
-//            // If there is an varargs (unnamed) parameter, put it at the end.
-//            if (!parameters.first().name) {
-//                parameters.add(parameters.remove(0))
-//            }
-
             parameters.each { parameter ->
                 def name = parameter.name ?: VARARGS_PARAMETER_NAME
                 if (parameter.infile) {
@@ -249,12 +244,14 @@ class Command extends Closure<Process>
             cls = cls.getSuperclass();
         }
 
-        // Sort by the first name is the names list, if any.
-        // The "no name" parameter (empty array for names()), if there is one, will be first with standard sort.
-        // parameters.sort { it.name }
-        // But if there is an varargs (unnamed) parameter it should be at the end.
-        // Use a comparator that says false (null or empty strings) is greater than anything.
-        parameters.sort { a, b -> a.name ? (b.name ? a.name <=> b.name : 0) : 1 }
+//        // Sort by the first name is the names list, if any.
+//        // The "no name" parameter (empty array for names()), if there is one, will be first with standard sort.
+//        // parameters.sort { it.name }
+//        // But if there is an varargs (unnamed) parameter it should be at the end.
+//        // Use a comparator that says false (null or empty strings) is greater than anything.
+//        parameters.sort { a, b -> a.name ? (b.name ? a.name <=> b.name : 0) : 1 }
+
+        parameters
     }
 
     WorkflowScript getWorkflowScript() { workflowScript }
@@ -297,9 +294,9 @@ class Command extends Closure<Process>
         jt.args = jobArgs
 
         // Don't redirect these for files that the executable will create itself.
-        if (process._stdin != null && !getArgumentDefaultValues().containsKey('input')) jt.setInputPath(process._stdin.path)
-        if (process._stdout != null && !getArgumentDefaultValues().containsKey('output')) jt.setOutputPath(process._stdout.path)
-        if (process._stderr != null && !getArgumentDefaultValues().containsKey('error')) jt.setErrorPath(process._stderr.path)
+        if (process.isStdioFileUsed(Process.INPUT) && !process.isPsuedoStdioFile(Process.INPUT)) jt.setInputPath(process.input.path)
+        if (process.isStdioFileUsed(Process.OUTPUT) && !process.isPsuedoStdioFile(Process.OUTPUT)) jt.setOutputPath(process.output.path)
+        if (process.isStdioFileUsed(Process.STDERR) && !process.isPsuedoStdioFile(Process.STDERR)) jt.setErrorPath(process.error.path)
 
         if (jobTemplateCustomizer) jobTemplateCustomizer(jt)
 

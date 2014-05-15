@@ -1,7 +1,5 @@
 package org.ifcx.gondor.api;
 
-import groovy.lang.Closure;
-
 import java.lang.annotation.*;
 
 /**
