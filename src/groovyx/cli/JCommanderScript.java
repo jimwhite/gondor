@@ -65,6 +65,13 @@ abstract public class JCommanderScript extends Script {
         }
     }
 
+    /**
+     * If the given numeric code is non-zero, then return it from this process using System.exit.
+     * A null code is taken to be zero, non-Integer values have their toString representation parsed as an integer.
+     *
+     * @param code
+     * @return the given code as an Integer
+     */
     public Object exitCode(Object code) {
         if (code == null) code = 0;
         Integer codeValue = code instanceof Integer ? (Integer) code : Integer.parseInt(code.toString());
@@ -72,6 +79,12 @@ abstract public class JCommanderScript extends Script {
         return codeValue;
     }
 
+    /**
+     * Return the script arguments as an array of strings.
+     * The default implementation is to get the "args" property.
+     *
+     * @return the script arguments as an array of strings.
+     */
     public String[] getScriptArguments() {
         return (String[]) getProperty("args");
     }
@@ -91,8 +104,8 @@ abstract public class JCommanderScript extends Script {
                 // this then it just gets stuffed into a binding that shadows the property.
                 // This is somewhat related to other bugged behavior in Script wrt properties and bindings.
                 // See http://jira.codehaus.org/browse/GROOVY-6582 for example.
-                // The correct behavior for Script.setProperty should to check for the
-                // property before creating a binding doesn't already exist.
+                // The correct behavior for Script.setProperty would be to check whether
+                // the property has a setter before creating a new script binding.
                 this.getMetaClass().setProperty(this, SCRIPT_JCOMMANDER, jc);
             }
             return jc;

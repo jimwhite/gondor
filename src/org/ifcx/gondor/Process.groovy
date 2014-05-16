@@ -17,7 +17,7 @@ class Process
 
     public final static String INPUT = ":input";
     public final static String OUTPUT = ":output";
-    public final static String STDERR = ":error";
+    public final static String ERROR = ":error";
 
     public Process(Command command, Map<String, Object> params) {
         this.command = command
@@ -26,7 +26,16 @@ class Process
     }
 
     void initializeAttributes() {
+        [INPUT, OUTPUT, ERROR].each {
+            if (params.containsKey(it)) {
+                def value = command.getArgumentDefaultValues()[it]
+                if (value != null) {
+                    attributes[it] = value
+                    psuedo_io << it
+                }
 
+            }
+        }
     }
 
     public boolean isStdioFileUsed(String name) { attributes.containsKey(name) }
@@ -87,17 +96,17 @@ class Process
     Process rightShiftUnsigned(File sink) { errorFile(sink) }
 
     Process errorFile(File sink) {
-        if (attributes[STDERR] != null) throw new IllegalStateException("stderr already set")
-        attributes[STDERR] = sink
+        if (attributes[ERROR] != null) throw new IllegalStateException("stderr already set")
+        attributes[ERROR] = sink
         outfiles << sink
         this
     }
 
     File getError() {
-        if (attributes[STDERR] == null) {
+        if (attributes[ERROR] == null) {
             errorFile(command.newTemporaryFile(".err"))
         }
-        (File) attributes[STDERR]
+        (File) attributes[ERROR]
     }
 
 }

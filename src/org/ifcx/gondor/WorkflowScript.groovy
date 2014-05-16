@@ -17,15 +17,15 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     Workflow workflow
 
     @Parameter(names=['workflowName'])
-//    @Initializer({ it.getClass().name })
-//    @Initializer({ workflowName })
-    String workflowName = this.getClass().name
+//    @Initializer({ getClass().name })
+    String workflowName = getClass().name
 
-//    @Parameter(names=['output'])
+    @Parameter(names=Process.OUTPUT)
 //    @Initializer({ new File(it.workflowName + '.dag') })
 //    @Initializer({ -> dagFile })
-    @Initializer({ new File(workflowName + '.dag') })
-    @OutputFile(name=Process.OUTPUT) File dagFile = new File(workflowName + '.dag')
+    @Initializer({ -> new File(workflowName + '.dag') })
+//    @OutputFile(name=Process.OUTPUT) File dagFile = new File(workflowName + '.dag')
+    @OutputFile File dagFile = new File(workflowName + '.dag')
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]

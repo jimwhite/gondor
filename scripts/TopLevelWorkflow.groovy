@@ -11,4 +11,4 @@ def p = fileListGrepWorkflow('--path':new File('../scripts'), '--pattern':'Go'
 
 p >>> new File('tl_flsgrep-err.txt')
 
-// assert p.output == new File('FileListGrepWorkflow.dag')
+assert p.output == new File('FileListGrepWorkflow.dag')

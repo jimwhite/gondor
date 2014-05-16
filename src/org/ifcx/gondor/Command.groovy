@@ -36,7 +36,9 @@ class Command extends Closure<Process>
         desc.call(this)
     }
 
-    final static def VARARGS_PARAMETER_NAME = '_args'
+    final static def VARARGS_PARAMETER_NAME = ':args'
+
+    public static boolean isProcessParameter(String name) { name.startsWith(':') }
 
     /** TODO: Convert these to enums. **/
 
@@ -190,7 +192,7 @@ class Command extends Closure<Process>
                 println it
                 Class initializer = it.initializer?.value()
                 if (initializer) {
-                    def val = (initializer.newInstance(script, script)).call()
+                    def val = ((Closure) (initializer.newInstance(script, script))).call()
                     println(val)
                     it.value = val
                 }
@@ -205,11 +207,11 @@ class Command extends Closure<Process>
                     }
                     def value = null
                     if (parameter.initializer) value = parameter.value
-                    parameter.name ? infile(name:name, value:value, format: {[name, it]}) : infile(name:name)
+                    parameter.name ? infile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : infile(name:name)
                 } else if (parameter.outfile) {
                     def value = null
                     if (parameter.initializer) value = parameter.value
-                    parameter.name ? outfile(name:name, value:value, format: {[name, it]}) : outfile(name:name)
+                    parameter.name ? outfile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : outfile(name:name)
                 } else {
                     if (parameter.name) {
                         def value = parameter.required ? REQUIRED : OPTIONAL
@@ -296,7 +298,7 @@ class Command extends Closure<Process>
         // Don't redirect these for files that the executable will create itself.
         if (process.isStdioFileUsed(Process.INPUT) && !process.isPsuedoStdioFile(Process.INPUT)) jt.setInputPath(process.input.path)
         if (process.isStdioFileUsed(Process.OUTPUT) && !process.isPsuedoStdioFile(Process.OUTPUT)) jt.setOutputPath(process.output.path)
-        if (process.isStdioFileUsed(Process.STDERR) && !process.isPsuedoStdioFile(Process.STDERR)) jt.setErrorPath(process.error.path)
+        if (process.isStdioFileUsed(Process.ERROR) && !process.isPsuedoStdioFile(Process.ERROR)) jt.setErrorPath(process.error.path)
 
         if (jobTemplateCustomizer) jobTemplateCustomizer(jt)
 
