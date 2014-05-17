@@ -123,7 +123,7 @@ public class WorkflowImpl implements Workflow {
 
         def jt1 = jt0
 
-        def jobTemplateName = nextJobTemplateName(jt1.jobName ?: defaultJobTemplateName(jt1))
+        def jobTemplateName = nextJobTemplateName(jt1.jobName ?: defaultJobTemplateName(jt1.remoteCommand))
 
         File jobTemplateFile = new File(temporaryFilesDir, jobTemplateName + ".job")
 
@@ -141,8 +141,8 @@ public class WorkflowImpl implements Workflow {
         [jobTemplateName, jobComment, jobTemplateFile]
     }
 
-    private String defaultJobTemplateName(JobTemplateImpl jt1) {
-        def name = jt1.remoteCommand.replaceAll(/[^A-Za-z_]/, '_')
+    private static String defaultJobTemplateName(String path) {
+        def name = path.replaceAll(/[^A-Za-z_]/, '_')
         if (!name.startsWith('_')) name = '_' + name
         name
     }
@@ -170,6 +170,15 @@ public class WorkflowImpl implements Workflow {
         }
         assert jobIds.size() == Math.floor(((end - start) / incr) + 1)
         jobIds
+    }
+
+    String runWorkflow(File dagFile) throws DrmaaException {
+        def jobId = nextJobId(defaultJobTemplateName(dagFile.path))
+        String jobComment = "Workflow ${dagFile.path}"
+        def job = new SubDAG(id: jobId, comment: jobComment, /*procId: -1,*/ templateFile: dagFile)
+        job.parentIds.addAll(parentJobIds)
+        jobs[jobId] = job
+        jobId
     }
 
     @Override
@@ -387,7 +396,7 @@ Log=${logFile}
 
     def writeDAGFile(dag_file)
     {
-        dag_file.withPrintWriter { printer ->
+        dag_file.withPrintWriter { PrintWriter printer ->
             Map<Set<String>, Set<String>> dependencies = [:].withDefault { [] as Set<String> }
 
             printer.println """### BEGIN Condor DAGman DAG File ###
@@ -395,17 +404,7 @@ Log=${logFile}
 #
 """
             jobs.each { String jobId, Job job ->
-                printer.println '# ' + job.comment
-                printer.println "JOB ${job.id} ${job.templateFile.path}" +
-                        "${job.workingDir ? ' DIR ' + job.workingDir.path : ''}"
-
-                def vars = [:]
-
-                if (job.procId != null) { vars._GONDOR_PROCID = job.procId }
-
-                if (vars) {
-                    printer.println "VARS ${job.id} ${vars.collect { k, v -> "$k=\"$v\""}.join(' ')}"
-                }
+                job.printToDAG(printer)
 
                 if (job.parentIds) {
                     if (!dependencies.containsKey(job.parentIds)) {

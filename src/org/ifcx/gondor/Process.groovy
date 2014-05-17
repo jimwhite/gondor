@@ -1,5 +1,7 @@
 package org.ifcx.gondor
 
+import org.ggf.drmaa.JobTemplate
+
 class Process
 {
     String jobId
@@ -21,7 +23,9 @@ class Process
 
     public Process(Command command, Map<String, Object> params) {
         this.command = command
-        this.params = params
+        this.params = command.getArgumentDefaultValues().collectEntries {
+            k, v -> [k, params.containsKey(k) ? params[k] : v]
+        }
         initializeAttributes()
     }
 
@@ -108,5 +112,4 @@ class Process
         }
         (File) attributes[ERROR]
     }
-
 }

@@ -65,9 +65,12 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         new Command(this, params.path, { _groovy() })
     }
 
+    public WorkflowCommand workflow(Command command) {
+        new WorkflowCommand(command)
+    }
+
     public Process process(Command command, Map<String, Object> params) {
-        def p = command.getArgumentDefaultValues().collectEntries { k, v -> [k, params.containsKey(k) ? params[k] : v]}
-        Process process = new Process(command, p)
+        Process process = new Process(command, params)
         processes.add(process)
         process
     }
@@ -75,8 +78,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     void runJobsForProcesses() { processes.each { runJobForProcess(it) } }
 
     void runJobForProcess(Process process) {
-        JobTemplate jt = process.command.createJobTemplate(process)
-        String jobId = runJob(jt)
+        String jobId = process.command.runJob(process)
         processForJobId[jobId] = process
         process.outfiles.each { jobIdForOutputFile[it] = jobId }
     }

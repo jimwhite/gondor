@@ -3,6 +3,7 @@ package org.ifcx.gondor
 import com.beust.jcommander.Parameter
 
 import org.ggf.drmaa.JobTemplate
+import org.ifcx.drmaa.Workflow
 import org.ifcx.gondor.api.Initializer
 import org.ifcx.gondor.api.InputDirectory
 import org.ifcx.gondor.api.InputFile
@@ -23,15 +24,15 @@ import java.lang.reflect.Field
 
 class Command extends Closure<Process>
 {
-    String commandPath
+    private String _commandPath
 
     private Closure<JobTemplate> jobTemplateCustomizer // = { it }
-    private WorkflowScript workflowScript
+    private WorkflowScript _workflowScript
 
     Command(WorkflowScript workflowScript, String path, @DelegatesTo(Command) Closure desc) {
         super(desc.owner)
-        this.workflowScript = workflowScript
-        this.commandPath = path
+        this._workflowScript = workflowScript
+        this._commandPath = path
         desc.delegate = this
         desc.call(this)
     }
@@ -50,8 +51,22 @@ class Command extends Closure<Process>
 
     def type = EXECUTABLE
 
-    Map<String, Object> argumentDefaultValues = [:]
+    Map<String, Object> _argumentDefaultValues = [:]
     List<Closure> args = []
+
+    WorkflowScript getWorkflowScript() { _workflowScript }
+
+    Workflow getWorkflow() { _workflowScript }
+
+    String getCommandPath() { _commandPath }
+
+    Map<String, Object> getArgumentDefaultValues() {
+        _argumentDefaultValues
+    }
+
+    String runJob(Process process) {
+        getWorkflow().runJob(createJobTemplate(process))
+    }
 
     def flag(String lit, Closure pat = { it }) {
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
@@ -100,7 +115,7 @@ class Command extends Closure<Process>
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             resolveFileArgument(m, name).each { File f ->
                 if (val != null) {
-                    System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
+                    System.err.println "Warning: File argument $name in command $_commandPath must have value $val but is given $f"
                 }
                 p.infiles << f
                 addArguments(a, pat(f))
@@ -146,10 +161,10 @@ class Command extends Closure<Process>
     }
 
     void addArgumentName(String name, Object val) {
-        if (argumentDefaultValues.containsKey(name)) {
-            System.err.println "Warning: Duplicated argument name '$name' in command $commandPath"
+        if (getArgumentDefaultValues().containsKey(name)) {
+            System.err.println "Warning: Duplicated argument name '$name' in command $_commandPath"
         }
-        argumentDefaultValues[name] = val
+        getArgumentDefaultValues()[name] = val
     }
 
     /**
@@ -179,10 +194,10 @@ class Command extends Closure<Process>
 
     // This is a Gondor command in Groovy.  Get the metadata from the annotations.
     def _groovy() {
-        println "Inspecting Groovy command $commandPath"
+        println "Inspecting Groovy command $_commandPath"
 
         GroovyShell shell = new GroovyShell()
-        Script script = shell.parse(new File(commandPath))
+        Script script = shell.parse(new File(_commandPath))
         Class scriptClass = script.getClass();
 
         def parameters = getParameterAnnotations(scriptClass)
@@ -203,7 +218,7 @@ class Command extends Closure<Process>
                 def name = parameter.name ?: VARARGS_PARAMETER_NAME
                 if (parameter.infile) {
                     if (parameter.outfile) {
-                        System.err.println "Error: Parameter ${it.name} in $commandPath is marked as both an infile and an outfile."
+                        System.err.println "Error: Parameter ${it.name} in $_commandPath is marked as both an infile and an outfile."
                     }
                     def value = null
                     if (parameter.initializer) value = parameter.value
@@ -256,8 +271,6 @@ class Command extends Closure<Process>
         parameters
     }
 
-    WorkflowScript getWorkflowScript() { workflowScript }
-
     /**
      * Since we allow optional arguments, we might get called with none, so handle that case
      * and treat it as though we'd been called with an empty map.
@@ -271,9 +284,9 @@ class Command extends Closure<Process>
      * in the workflow with the given parameter values.
      */
     Process call(Map params, Object... args) {
-        def p = params.clone()
+        Map<String, Object> p = (Map) params.clone()
         p[VARARGS_PARAMETER_NAME] = args as List
-        workflowScript.process(this, p)
+        call(p)
     }
 
     /**
@@ -281,11 +294,11 @@ class Command extends Closure<Process>
      * in the workflow with the given parameter values.
      */
     Process call(Map params) {
-        workflowScript.process(this, params)
+        _workflowScript.process(this, params)
     }
 
     JobTemplate createJobTemplate(Process process) {
-        JobTemplate jt = workflowScript.createJobTemplate()
+        JobTemplate jt = _workflowScript.createJobTemplate()
 
         jt.remoteCommand = process.command.getCommandPath()
 
@@ -306,6 +319,6 @@ class Command extends Closure<Process>
     }
 
     File newTemporaryFile(String s) {
-        getWorkflowScript().newTemporaryFile(commandPath.replaceAll(/\W/, /_/), s)
+        getWorkflowScript().newTemporaryFile(getCommandPath().replaceAll(/\W/, /_/), s)
     }
 }
