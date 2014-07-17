@@ -102,9 +102,24 @@ class Command extends Closure<Process>
         }
     }
 
+    def arg(String name, Object val = REQUIRED, Map mappings) {
+        addArgumentName(name, val)
+        args << { List<String> a, WorkflowScript w, Process p, Map m ->
+            def v = m[name]
+            if (v.is(REQUIRED)) {
+                System.err.println "Warning: Missing argument value for '$name' in command ${getCommandPath()}"
+            } else if (!v.is(OPTIONAL)) {
+                (v instanceof Collection ? v.flatten() : [v]).each { addArguments(a, mapArgument(name, mappings, it)) }
+//                    def vs = pat(it)
+//                    (vs instanceof Collection ? vs.flatten() : [vs]).each { addArguments(a, it) }
+//                }
+            }
+        }
+    }
+
     def arg(Map m) {
         if (m.containsKey('format')) {
-            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, (Closure) m.format)
+            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, m.format)
         } else {
             arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED)
         }
@@ -138,7 +153,7 @@ class Command extends Closure<Process>
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             resolveFileArgument(m, name).each { File f ->
                 if (val != null && val != f) {
-                    System.err.println "Warning: File argument ${name}  in command ${getCommandPath()}  must have value $val but is given $f"
+                    System.err.println "Warning: File argument ${name} in command ${getCommandPath()} must have value $val but is given $f"
                 }
                 p.outfiles << f
                 addArguments(a, pat(f))
@@ -188,6 +203,14 @@ class Command extends Closure<Process>
 
     static void addArguments(List<String> a, def v) {
         a.addAll(stringify(v))
+    }
+
+    static mapArgument(String name, Map mappings, def v) {
+        if (!mappings.containsKey(v)) {
+            throw new IllegalArgumentException("Argument '$name' should have a value in ${mappings.keySet()} but got '$v'.")
+        }
+        def mapping = mappings[v]
+        (mapping instanceof Closure) ? mapping(v) : mapping
     }
 
 //    static String stringifyFile(File file) { file.path }
