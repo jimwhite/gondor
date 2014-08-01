@@ -35,9 +35,8 @@ class Process
                 def value = command.getArgumentDefaultValues()[it]
                 if (value != null) {
                     attributes[it] = value
-                    psuedo_io << it
+                    setPsuedoStdioFile(it)
                 }
-
             }
         }
     }
@@ -75,7 +74,7 @@ class Process
     }
 
     File getInput() {
-        if (!attributes[INPUT] != null) {
+        if (attributes[INPUT] == null) {
             fromFile(command.newTemporaryFile(".in"))
         }
         (File) attributes[INPUT]
