@@ -19,6 +19,9 @@ class Job {
     File workingDir
     Integer procId
     Set<String> parentIds = []
+    String preScript = "../scripts/job_wrapper.sh"
+    Set<Integer> preSkipCodes = [142]
+    String postScript = preScript
 
     Job init(GondorJobTemplate jt) {
         def (jobTemplateName, jobComment, jobTemplateFile) = getJobTemplateFile(jt)
@@ -43,8 +46,16 @@ class Job {
         if (vars) {
             printer.println "VARS ${id} ${vars.collect { k, v -> "$k=\"$v\"" }.join(' ')}"
         }
-    }
 
+        if (preScript) printer.println "SCRIPT PRE $id $preScript pre " +
+                '$JOB $RETRY $MAX_RETRIES $DAG_STATUS $FAILED_COUNT '
+
+        preSkipCodes.each { printer.println "PRE_SKIP $id $it" }
+
+        if (postScript) printer.println "SCRIPT POST $id $postScript post " +
+                '$JOB $RETRY $MAX_RETRIES $DAG_STATUS $FAILED_COUNT ' +
+                '$JOBID $RETURN $PRE_SCRIPT_RETURN '
+    }
 
     String nextJobId(String jobName) {
         jobName + String.format("_%04d", workflow.nextJobNumber())
