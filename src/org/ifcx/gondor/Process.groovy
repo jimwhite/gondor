@@ -4,8 +4,6 @@ import org.ggf.drmaa.JobTemplate
 
 class Process
 {
-    String jobId
-
     Command command
 
     Map<String, Object> params

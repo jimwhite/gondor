@@ -96,8 +96,12 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         }
     }
 
+    Integer temporaryFileNumber = 0
+
     File newTemporaryFile(String prefix, String suffix) {
-        File.createTempFile(prefix, suffix, new File(getTemporaryFilesPath()))
+//        File.createTempFile(prefix, suffix, new File(getTemporaryFilesPath()))
+//        new File(getTemporaryFilesPath(), "${prefix}_${++temporaryFileNumber}$suffix")
+        new File(getTemporaryFilesPath(), String.format("%s_%04d_%s", prefix, ++temporaryFileNumber, suffix))
     }
 
     @Override
