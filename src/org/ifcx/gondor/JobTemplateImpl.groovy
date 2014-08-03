@@ -27,6 +27,7 @@ import org.ggf.drmaa.JobTemplate
 import org.ggf.drmaa.PartialTimestamp
 import org.ggf.drmaa.PartialTimestampFormat
 import org.ggf.drmaa.UnsupportedAttributeException
+import org.ifcx.drmaa.GondorJobTemplate
 
 /**
  * This class represents a remote job and its attributes.  It is used to
@@ -85,7 +86,7 @@ import org.ggf.drmaa.UnsupportedAttributeException
 
 @EqualsAndHashCode(includeFields = true)
 @AutoClone
-public class JobTemplateImpl implements JobTemplate
+public class JobTemplateImpl implements GondorJobTemplate
 {
 
     private static final String REMOTE_COMMAND = "remoteCommand";
@@ -927,4 +928,43 @@ public class JobTemplateImpl implements JobTemplate
         return attributeSet;
     }
 
+    @Override
+    GondorJobTemplate inFile(String path) {
+        return this
+    }
+
+    @Override
+    GondorJobTemplate inDir(String path) {
+        return this
+    }
+
+    @Override
+    GondorJobTemplate outFile(String path) {
+        return this
+    }
+
+    @Override
+    GondorJobTemplate outDir(String path) {
+        return this
+    }
+
+    @Override
+    List<String> getInFilePaths() {
+        return []
+    }
+
+    @Override
+    List<String> getInDirPaths() {
+        return []
+    }
+
+    @Override
+    List<String> getOutFilePaths() {
+        return []
+    }
+
+    @Override
+    List<String> getOutDirPaths() {
+        return []
+    }
 }
