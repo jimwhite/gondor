@@ -70,7 +70,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     }
 
     public Process process(Command command, Map<String, Object> params) {
-        Process process = new Process(command, params)
+        Process process = new Process(this, command, params)
         processes.add(process)
         process
     }
@@ -78,7 +78,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     void runJobsForProcesses() { processes.each { runJobForProcess(it) } }
 
     void runJobForProcess(Process process) {
-        String jobId = process.command.runJob(process)
+        String jobId = process.runJob()
         processForJobId[jobId] = process
         process.outfiles.each { jobIdForOutputFile[it] = jobId }
     }

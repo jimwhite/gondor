@@ -3,7 +3,6 @@ package org.ifcx.gondor
 import com.beust.jcommander.Parameter
 
 import org.ggf.drmaa.JobTemplate
-import org.ifcx.drmaa.Workflow
 import org.ifcx.gondor.api.Initializer
 import org.ifcx.gondor.api.InputDirectory
 import org.ifcx.gondor.api.InputFile
@@ -24,14 +23,14 @@ import java.lang.reflect.Field
 
 class Command extends Closure<Process>
 {
-    private String _commandPath
+    final WorkflowScript _workflow
+    final private String _commandPath
 
-    private Closure<JobTemplate> jobTemplateCustomizer // = { it }
-    private WorkflowScript _workflowScript
+    Closure<JobTemplate> jobTemplateCustomizer // = { it }
 
-    Command(WorkflowScript workflowScript, String path, @DelegatesTo(Command) Closure desc) {
+    Command(WorkflowScript workflow, String path, @DelegatesTo(Command) Closure desc) {
         super(desc.owner)
-        this._workflowScript = workflowScript
+        this._workflow = workflow
         this._commandPath = path
         desc.delegate = this
         desc.call(this)
@@ -54,18 +53,12 @@ class Command extends Closure<Process>
     Map<String, Object> _argumentDefaultValues = [:]
     List<Closure> args = []
 
-    WorkflowScript getWorkflowScript() { _workflowScript }
-
-    Workflow getWorkflow() { _workflowScript }
+    WorkflowScript getWorkflowScript() { _workflow }
 
     String getCommandPath() { _commandPath }
 
     Map<String, Object> getArgumentDefaultValues() {
         _argumentDefaultValues
-    }
-
-    String runJob(Process process) {
-        getWorkflow().runJob(createJobTemplate(process))
     }
 
     def flag(String lit, Closure pat = { it }) {
@@ -317,31 +310,7 @@ class Command extends Closure<Process>
      * in the workflow with the given parameter values.
      */
     Process call(Map params) {
-        _workflowScript.process(this, params)
+        getWorkflowScript().process(this, params)
     }
 
-    JobTemplate createJobTemplate(Process process) {
-        JobTemplate jt = _workflowScript.createJobTemplate()
-
-        jt.remoteCommand = process.command.getCommandPath()
-
-        List<String> jobArgs = []
-        args.each { Closure ac ->
-            ac(jobArgs, getWorkflowScript(), process, process.params)
-        }
-        jt.args = jobArgs
-
-        // Don't redirect these for files that the executable will create itself.
-        if (process.isStdioFileUsed(Process.INPUT) && !process.isPsuedoStdioFile(Process.INPUT)) jt.setInputPath(process.input.path)
-        if (process.isStdioFileUsed(Process.OUTPUT) && !process.isPsuedoStdioFile(Process.OUTPUT)) jt.setOutputPath(process.output.path)
-        if (process.isStdioFileUsed(Process.ERROR) && !process.isPsuedoStdioFile(Process.ERROR)) jt.setErrorPath(process.error.path)
-
-        if (jobTemplateCustomizer) jobTemplateCustomizer(jt)
-
-        jt
-    }
-
-    File newTemporaryFile(String s) {
-        getWorkflowScript().newTemporaryFile(getCommandPath().replaceAll(/\W/, /_/), s)
-    }
 }

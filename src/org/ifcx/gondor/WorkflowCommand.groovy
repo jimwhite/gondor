@@ -1,7 +1,6 @@
 package org.ifcx.gondor
 
 import org.ggf.drmaa.JobTemplate
-import org.ifcx.drmaa.Workflow
 
 /**
  * Created by jim on 5/16/14.
@@ -18,21 +17,21 @@ class WorkflowCommand extends Command {
         dagProducerCommand = command
     }
 
-//    @Override
-//    Process call(Map params) {
-//        Process process = dagProducerCommand.call(params)
-//        process.command = this
-//        process
-//    }
-
     @Override
-    String runJob(Process process) {
-        String dagFileJobId = dagProducerCommand.runJob(process)
-        File dagFile = process.output
-        String subDAGJobId = getWorkflow().runWorkflow(dagFile)
-        getWorkflow().addToParentJobIds(subDAGJobId, dagFileJobId)
-        subDAGJobId
+    Process call(Map params) {
+        Process process = dagProducerCommand.call(params)
+        process.setCommand(this)
+        process
     }
+
+//    @Override
+//    String runJob(Process process) {
+//        String dagFileJobId = dagProducerCommand.runJob(process)
+//        File dagFile = process.output
+//        String subDAGJobId = getWorkflow().runWorkflow(dagFile)
+//        getWorkflow().addToParentJobIds(subDAGJobId, dagFileJobId)
+//        subDAGJobId
+//    }
 
     @Override
     def flag(String lit, Closure pat) {
@@ -125,11 +124,6 @@ class WorkflowCommand extends Command {
     }
 
     @Override
-    Workflow getWorkflow() {
-        return dagProducerCommand.getWorkflow()
-    }
-
-    @Override
     String getCommandPath() {
         return dagProducerCommand.getCommandPath()
     }
@@ -190,13 +184,4 @@ class WorkflowCommand extends Command {
         return dagProducerCommand.getParameterAnnotations(cls)
     }
 
-    @Override
-    JobTemplate createJobTemplate(Process process) {
-        return dagProducerCommand.createJobTemplate(process)
-    }
-
-    @Override
-    File newTemporaryFile(String s) {
-        return dagProducerCommand.newTemporaryFile(s)
-    }
 }

@@ -1,12 +1,13 @@
 package org.ifcx.gondor
 
 import org.ggf.drmaa.JobTemplate
+import org.ifcx.drmaa.Workflow
 
 class Process
 {
+    final WorkflowScript workflow
     Command command
-
-    Map<String, Object> params
+    final Map<String, Object> params
 
     List<File> infiles = []
     List<File> outfiles = []
@@ -19,7 +20,8 @@ class Process
     public final static String OUTPUT = ":output";
     public final static String ERROR = ":error";
 
-    public Process(Command command, Map<String, Object> params) {
+    public Process(WorkflowScript workflow, Command command, Map<String, Object> params) {
+        this.workflow = workflow
         this.command = command
         this.params = command.getArgumentDefaultValues().collectEntries {
             k, v -> [k, params.containsKey(k) ? params[k] : v]
@@ -56,6 +58,37 @@ class Process
         }
     }
 
+    String runJob() {
+        workflow.runJob(createJobTemplate())
+    }
+
+    JobTemplate createJobTemplate() {
+        JobTemplate jt = workflow.createJobTemplate()
+
+        jt.remoteCommand = this.command.getCommandPath()
+
+        List<String> jobArgs = []
+        command.getArgs().each { Closure ac ->
+            ac(jobArgs, workflow, this, params)
+        }
+        jt.args = jobArgs
+
+        // Don't redirect these for files that the executable will create itself.
+        if (isStdioFileUsed(Process.INPUT) && !isPsuedoStdioFile(Process.INPUT)) jt.setInputPath(input.path)
+        if (isStdioFileUsed(Process.OUTPUT) && !isPsuedoStdioFile(Process.OUTPUT)) jt.setOutputPath(output.path)
+        if (isStdioFileUsed(Process.ERROR) && !isPsuedoStdioFile(Process.ERROR)) jt.setErrorPath(error.path)
+
+
+        Closure<JobTemplate> jobTemplateCustomizer = command.getJobTemplateCustomizer()
+        if (jobTemplateCustomizer != null) { jobTemplateCustomizer(jt) }
+
+        jt
+    }
+
+    File newTemporaryFile(String s) {
+        workflow.newTemporaryFile(command.getCommandPath().replaceAll(/\W/, /_/), s)
+    }
+
     Process or(Process sink) { toProcess(sink) }
 
     Process toProcess(Process sink) {
@@ -73,7 +106,7 @@ class Process
 
     File getInput() {
         if (attributes[INPUT] == null) {
-            fromFile(command.newTemporaryFile(".in"))
+            fromFile(newTemporaryFile(".in"))
         }
         (File) attributes[INPUT]
     }
@@ -89,7 +122,7 @@ class Process
 
     File getOutput() {
         if (attributes[OUTPUT] == null) {
-            toFile(command.newTemporaryFile(".out"))
+            toFile(newTemporaryFile(".out"))
         }
         (File) attributes[OUTPUT]
     }
@@ -105,7 +138,7 @@ class Process
 
     File getError() {
         if (attributes[ERROR] == null) {
-            errorFile(command.newTemporaryFile(".err"))
+            errorFile(newTemporaryFile(".err"))
         }
         (File) attributes[ERROR]
     }
