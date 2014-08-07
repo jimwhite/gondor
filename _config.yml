@@ -1,0 +1,14 @@
+# Site settings
+title: "Gondor : The Groovy DSL for HTCondor DAGman Workflows"
+email: jimwhite@uw.edu
+description: "Groovy Condor : High Throughput Computing in High Style"
+baseurl: ""
+url: "http://jimwhite.github.io"
+twitter_username: oohtml
+github_username:  jimwhite
+
+# Build settings
+markdown: kramdown
+permalink: pretty
+safe: true
+lsi: false
