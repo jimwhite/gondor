@@ -24,17 +24,25 @@ You should be able to use `Open Project` on the `Gondor` directory and fix up th
 
 An item for `TestWorkflow` should appear in the run configurations menu.  It contains these settings:
 
-```
+```bash
 Script path: [parent]/Gondor/scripts/TestWorkflow.groovy
 Module: gondor
 VM options: -Dorg.ggf.drmaa.SessionFactory=net.sf.igs.SessionFactoryImpl -Dorg.ifcx.drmaa.WorkflowFactory=org.ifcx.gondor.WorkflowFactoryImpl
 Working dir: [parent]/Gondor/scripts
 ```
 
+Using Jekyll style code formatting:
+{% highlight bash %}
+Script path: [parent]/Gondor/scripts/TestWorkflow.groovy
+Module: gondor
+VM options: -Dorg.ggf.drmaa.SessionFactory=net.sf.igs.SessionFactoryImpl -Dorg.ifcx.drmaa.WorkflowFactory=org.ifcx.gondor.WorkflowFactoryImpl
+Working dir: [parent]/Gondor/scripts
+{% endhighlight %}
+
 The reason for running inside IntelliJ is setting the classpath, but that can be done from the command line as well.  
 There is a Gradle build, so in the `Gondor` dir you can do:
 
-```
+```bash
 $ gradle jar
 :compileJava UP-TO-DATE
 :compileGroovy
