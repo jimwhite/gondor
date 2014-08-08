@@ -13,3 +13,7 @@ permalink: pretty
 safe: true
 lsi: false
 highlighter : pygments
+
+syntax-highlighting:
+  enabled : true
+  css: syntax.css
