@@ -55,11 +55,13 @@ Total time: 9.901 secs
 $ CLASSPATH=build/libs/Gondor-0.1.jar groovy scripts/TestWorkflow.groovy
 
 Generated 2 jobs for Condor DAG TestWorkflow.dag
+{% endhighlight %}
 
 That should generate a file TestWorkflow.dag and a directory TestWorkflow.jobs.
 
 The DAGman workflow can then be submitted in the usual way:
 
+{% highlight text %}
 $ condor_submit_dag TestWorkflow.dag
 {% endhighlight %}
 
