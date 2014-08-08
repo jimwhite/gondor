@@ -12,3 +12,4 @@ markdown: kramdown
 permalink: pretty
 safe: true
 lsi: false
+pygments: true
