@@ -57,7 +57,7 @@ $ CLASSPATH=build/libs/Gondor-0.1.jar groovy scripts/TestWorkflow.groovy
 Generated 2 jobs for Condor DAG TestWorkflow.dag
 {% endhighlight %}
 
-That should generate a file TestWorkflow.dag and a directory TestWorkflow.jobs.
+That should generate a file `TestWorkflow.dag` and a directory `TestWorkflow.jobs`.
 
 The DAGman workflow can then be submitted in the usual way:
 
