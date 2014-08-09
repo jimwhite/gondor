@@ -8,6 +8,8 @@ import org.ifcx.gondor.api.OutputFile
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
 
+copyEnvironment('PATH')
+
 // Define a command for /bin/ls.  It takes an optional file path argument.
 def ls = command(path:'/bin/ls') { infile 'path' }
 

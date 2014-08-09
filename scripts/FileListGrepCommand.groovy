@@ -39,4 +39,5 @@ result.withPrintWriter {
     [path, *paths].each { File dir -> dir.listFiles()*.name.findAll { it =~ pattern  }.each { println it } }
 }
 
+// The value of the last expression is the result of this script and will be our process' exit code.
 0

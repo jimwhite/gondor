@@ -1,6 +1,7 @@
 package org.ifcx.gondor
 
 import com.beust.jcommander.Parameter
+import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.JobTemplate
 import org.ifcx.drmaa.Workflow
 import org.ifcx.drmaa.WorkflowFactory
@@ -30,6 +31,8 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
     Map<File, String> jobIdForOutputFile = [:]
+
+    Map<String, String> environment = [:]
 
     Map<FileType, File> directories
 
@@ -98,6 +101,42 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         }
     }
 
+    /**
+     * Note that paths in the environment are expected to be absolute since we may not
+     * necessarily be run in the directory that was current when the workflow script was run.
+     */
+    Map<String, String> copyEnvironment(Object... vars)
+    {
+        // This is probably not a great idea, but it's here is you want it.
+        // Note that this is just if the parameter list is empty as in clone_environment().
+        // clone_environment([]) is a no-op (one parameter - no variable names).
+        if (!vars) { vars = System.getenv().keySet() }
+
+        vars.flatten().collectEntries {
+            String var -> def value = System.getenv(var); if (value) environment[var] = value ; [var, value]
+        }
+    }
+
+    // FIXME: These paths should be relativized like the others.
+    def prependClasspath(Object... args)
+    {
+        def classpaths = normalize_file_argument(args)*.canonicalPath
+
+        if (environment.CLASSPATH) classpaths << environment.CLASSPATH
+
+        environment.CLASSPATH = classpaths.join(File.pathSeparator)
+    }
+
+    // FIXME: This should be using the same logic in Command.
+    List<File> normalize_file_argument(arg) {
+        if (arg instanceof String) {
+            new File(arg as String)
+        } else {
+            arg.collect { it instanceof File ? [it] : new File(it as String) }
+        }
+    }
+
+
 //    Integer temporaryFileNumber = 0
 //
 //    File newTemporaryFile(String prefix, String suffix) {
@@ -138,6 +177,13 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         throw new IllegalStateException("Error: Attepmt to change workflow name from $workflowName to $name after initialization.")
     }
 
+    @Override
+    JobTemplate createJobTemplate() throws DrmaaException {
+        JobTemplate jt = workflow.createJobTemplate()
+        jt.setJobEnvironment(environment)
+        jt
+    }
+
 /*
     @Override
     void addToParentJobIds(String childJobId, String parentJobId) {
@@ -173,11 +219,6 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     @Override
     void exit() throws DrmaaException {
         workflow.exit()
-    }
-
-    @Override
-    JobTemplate createJobTemplate() throws DrmaaException {
-        workflow.createJobTemplate()
     }
 
     @Override

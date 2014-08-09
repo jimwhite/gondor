@@ -66,6 +66,9 @@ class Process
     JobTemplate createJobTemplate() {
         JobTemplate jt = workflow.createJobTemplate()
 
+        Closure<JobTemplate> jobTemplateCustomizer = command.getJobTemplateCustomizer()
+        if (jobTemplateCustomizer != null) { jobTemplateCustomizer(jt) }
+
         jt.remoteCommand = this.command.getCommandPath()
 
         List<String> jobArgs = []
@@ -79,9 +82,6 @@ class Process
         if (isStdioFileUsed(Process.OUTPUT) && !isPsuedoStdioFile(Process.OUTPUT)) jt.setOutputPath(output.path)
         if (isStdioFileUsed(Process.ERROR) && !isPsuedoStdioFile(Process.ERROR)) jt.setErrorPath(error.path)
 
-
-        Closure<JobTemplate> jobTemplateCustomizer = command.getJobTemplateCustomizer()
-        if (jobTemplateCustomizer != null) { jobTemplateCustomizer(jt) }
 
         jt
     }
