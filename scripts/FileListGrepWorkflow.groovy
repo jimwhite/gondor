@@ -1,4 +1,5 @@
-#!/usr/bin/env CLASSPATH=../build/libs/Gondor-0.1.jar /Users/jim/Projects/Groovy/groovy-2.3.0/bin/groovy
+#!/usr/bin/env CLASSPATH=out/artifacts/gondor/gondor.jar /Users/jim/Projects/Groovy/groovy-2.3.6/bin/groovy
+//#!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar /Users/jim/Projects/Groovy/groovy-2.3.0/bin/groovy
 
 import com.beust.jcommander.Parameter
 import groovy.transform.Field
@@ -50,6 +51,6 @@ def cat = command(path:'/bin/cat') { infile 'paths' }
 cat(paths:[path, *paths].collect { (ls(path:it) |
         grep(pat:pattern, ignoreCase:true, lineNumbers:true)).output }) >> new File("bin-${result.name}")
 
-def fileListGrep = groovy(path:"../scripts/FileListGrepCommand.groovy")
+def fileListGrep = groovy(path:"scripts/FileListGrepCommand.groovy")
 
 fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths) >>> new File('flsgrep-err.txt')

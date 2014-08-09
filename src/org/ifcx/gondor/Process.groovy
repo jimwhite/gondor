@@ -1,13 +1,14 @@
 package org.ifcx.gondor
 
 import org.ggf.drmaa.JobTemplate
-import org.ifcx.drmaa.Workflow
 
 class Process
 {
     final WorkflowScript workflow
     Command command
     final Map<String, Object> params
+
+    File jobDirectory
 
     List<File> infiles = []
     List<File> outfiles = []
@@ -85,8 +86,14 @@ class Process
         jt
     }
 
-    File newTemporaryFile(String s) {
-        workflow.newTemporaryFile(command.getCommandPath().replaceAll(/\W/, /_/), s)
+    File newJobFile(String s) {
+        if (jobDirectory == null) {
+            jobDirectory = workflow.newDirectory(FileType.JOB_DIR, command.getCommandPath().replaceAll(/\W/, /_/))
+            if (!(jobDirectory.exists() || jobDirectory.mkdirs())) {
+                throw new FailedFileSystemOperation("File.mkdirs failed in Process.newJobFile for " + jobDirectory)
+            }
+        }
+        new File(jobDirectory, s)
     }
 
     Process or(Process sink) { toProcess(sink) }
@@ -106,7 +113,7 @@ class Process
 
     File getInput() {
         if (attributes[INPUT] == null) {
-            fromFile(newTemporaryFile(".in"))
+            fromFile(newJobFile("job.in"))
         }
         (File) attributes[INPUT]
     }
@@ -122,7 +129,7 @@ class Process
 
     File getOutput() {
         if (attributes[OUTPUT] == null) {
-            toFile(newTemporaryFile(".out"))
+            toFile(newJobFile("job.out"))
         }
         (File) attributes[OUTPUT]
     }
@@ -138,7 +145,7 @@ class Process
 
     File getError() {
         if (attributes[ERROR] == null) {
-            errorFile(newTemporaryFile(".err"))
+            errorFile(newJobFile("job.err"))
         }
         (File) attributes[ERROR]
     }

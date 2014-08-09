@@ -19,7 +19,7 @@ class Job {
     File workingDir
     Integer procId
     Set<String> parentIds = []
-    String preScript = "../scripts/job_wrapper.sh"
+    String preScript = "scripts/job_wrapper.sh"
     Set<Integer> preSkipCodes = [142]
     String postScript = preScript
 

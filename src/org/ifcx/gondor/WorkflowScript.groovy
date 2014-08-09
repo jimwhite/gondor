@@ -31,6 +31,8 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     Map<String, Process> processForJobId = [:]
     Map<File, String> jobIdForOutputFile = [:]
 
+    Map<FileType, File> directories
+
     protected abstract Object runWorkflowScriptBody();
 
     public Object runScriptBody()
@@ -96,12 +98,31 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         }
     }
 
-    Integer temporaryFileNumber = 0
+//    Integer temporaryFileNumber = 0
+//
+//    File newTemporaryFile(String prefix, String suffix) {
+////        File.createTempFile(prefix, suffix, new File(getTemporaryFilesPath()))
+////        new File(getTemporaryFilesPath(), "${prefix}_${++temporaryFileNumber}$suffix")
+//        new File(getTemporaryFilesPath(), String.format("%s_%04d_%s", prefix, ++temporaryFileNumber, suffix))
+//    }
 
-    File newTemporaryFile(String prefix, String suffix) {
-//        File.createTempFile(prefix, suffix, new File(getTemporaryFilesPath()))
-//        new File(getTemporaryFilesPath(), "${prefix}_${++temporaryFileNumber}$suffix")
-        new File(getTemporaryFilesPath(), String.format("%s_%04d_%s", prefix, ++temporaryFileNumber, suffix))
+    File getDirectory(FileType type) {
+        if (directories == null) {
+            directories = [
+                    (FileType.JOB_DIR)   : new File("jobs")
+                    , (FileType.LOG_DIR) : new File("logs")
+                    , (FileType.TMP_DIR) : new File(workflow.getTemporaryFilesPath())
+                    , (FileType.WORKFLOW_DIR) : new File(".")
+            ]
+        }
+
+        directories[type]
+    }
+
+    Integer directoryNumber = 0
+
+    File newDirectory(FileType type, String prefix) {
+        new File(getDirectory(type), String.format("%s_%04d", prefix, ++directoryNumber))
     }
 
     @Override

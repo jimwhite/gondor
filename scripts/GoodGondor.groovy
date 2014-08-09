@@ -24,7 +24,7 @@ workflowScript.with {
     jt.outputPath = "good_here.txt"
     runJob(jt)
 
-    jt.remoteCommand = "../scripts/ls_here"
+    jt.remoteCommand = "scripts/ls_here"
     jt.outputPath = "good_up_then_here.txt"
     runJob(jt)
 
