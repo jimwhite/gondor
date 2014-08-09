@@ -1,4 +1,4 @@
-#!/usr/bin/env CLASSPATH=../build/libs/Gondor-0.1.jar /Users/jim/Projects/Groovy/groovy-2.3.0/bin/groovy
+#!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar groovy
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
 
