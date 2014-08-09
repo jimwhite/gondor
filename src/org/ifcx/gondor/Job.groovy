@@ -86,7 +86,16 @@ Log=${workflow.logFile}
             // Handle the case of the user/caller setting the environment for the job.
             if (jt.jobEnvironment) {
                 // This is the Condor directive for setting the job environment.
-                def envArgsValue = jt.jobEnvironment.collect { String k, String v -> k + '=' + v.replaceAll('"', '""') }
+                // See <file://localhost/Users/jim/Downloads/condor-V8_0_5-Manual/condor_submit.html#man-condor-submit-environment>.
+                // We use the "new" format of course which involves escaping ' and " by repeating them and
+                // surrounding spaces with a pair of single quotes.
+                def envArgsValue = jt.jobEnvironment.collect { String k, String v ->
+                    if (v.contains("'") || v.contains(" ")) {
+                        k + "='" + v.replace('"', '""').replace("'", "''") + "'"
+                    } else {
+                        k + '=' + v.replace('"', '""')
+                    }
+                }
                 printer.println "Environment = \"${envArgsValue.join(' ')}\""
             }
 

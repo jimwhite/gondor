@@ -10,6 +10,9 @@ import org.ifcx.gondor.api.OutputFile
 
 copyEnvironment('PATH')
 
+environment.FOO = 'hey there! what\'s up "doc"?'
+environment.BAR = "/yo /   3 spaces'path /"
+
 // Define a command for /bin/ls.  It takes an optional file path argument.
 def ls = command(path:'/bin/ls') { infile 'path' }
 
@@ -55,3 +58,5 @@ cat(paths:[path, *paths].collect { (ls(path:it) |
 def fileListGrep = groovy(path:"scripts/FileListGrepCommand.groovy")
 
 fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths) >>> new File('flsgrep-err.txt')
+
+groovy(path:"scripts/EchoEnvironment.groovy")() >> new File("env_dump.txt")
