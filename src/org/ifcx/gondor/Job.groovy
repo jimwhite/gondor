@@ -90,6 +90,9 @@ Log=${workflow.logFile}
                 // We use the "new" format of course which involves escaping ' and " by repeating them and
                 // surrounding spaces with a pair of single quotes.
                 def envArgsValue = jt.jobEnvironment.collect { String k, String v ->
+                    // Should check for/complain about sketchy variable names (suitable POSIX specs?).
+                    // That test is being done now in JobTemplateImpl.
+                    // Still kinda late since it doesn't fail as soon as the user's script gives us (Gondor) the bad value.
                     if (v.contains("'") || v.contains(" ")) {
                         k + "='" + v.replace('"', '""').replace("'", "''") + "'"
                     } else {
