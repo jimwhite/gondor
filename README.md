@@ -4,7 +4,6 @@ title: Gondor README
 ---
 
 ## Gondor ("Groovy Condor")
-### Gondor : High Throughput Computing in High Style
 
 Gondor is a tool that aims to make programming HTCondor DAGman workflows simple, streamlined, and (eventually) more
 powerful.  Planned features include workflow reduction (job output memoization) and provenance metadata that supports
