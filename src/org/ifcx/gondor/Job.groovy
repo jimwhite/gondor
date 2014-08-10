@@ -86,40 +86,22 @@ Log=${workflow.logFile}
             // Handle the case of the user/caller setting the environment for the job.
             if (jt.jobEnvironment) {
                 // This is the Condor directive for setting the job environment.
-                // See <file://localhost/Users/jim/Downloads/condor-V8_0_5-Manual/condor_submit.html#man-condor-submit-environment>.
+                // See <http://research.cs.wisc.edu/htcondor/manual/v8.0/condor_submit.html#man-condor-submit-environment>.
                 // We use the "new" format of course which involves escaping ' and " by repeating them and
                 // surrounding spaces with a pair of single quotes.
-                def envArgsValue = jt.jobEnvironment.collect { String k, String v ->
-                    // Should check for/complain about sketchy variable names (suitable POSIX specs?).
-                    // That test is being done now in JobTemplateImpl.
-                    // Still kinda late since it doesn't fail as soon as the user's script gives us (Gondor) the bad value.
-                    if (v.contains("'") || v.contains(" ")) {
-                        k + "='" + v.replace('"', '""').replace("'", "''") + "'"
-                    } else {
-                        k + '=' + v.replace('"', '""')
-                    }
-                }
-                printer.println "Environment = \"${envArgsValue.join(' ')}\""
+                // Should check for/complain about sketchy variable names (suitable POSIX specs?).
+                // That test is being done now in JobTemplateImpl.
+                // Still kinda late since it doesn't fail as soon as the user's script gives us (Gondor) the bad value.
+                List<String> envEntries = jt.jobEnvironment.collect { String k, String v -> k + "=" + v }
+                printer.println "Environment = \"${escapeForCondorSubmit(envEntries)}\""
             }
 
             // Here we handle the job arguments, if any have been supplied.
             // We try to adhere to the "new" way of specifying the arguments
             // as explained in the 'condor_submit' man page.
+            // <http://research.cs.wisc.edu/htcondor/manual/v8.0/condor_submit.html#man-condor-submit-arguments>
             if (jt.args) {
-                def args = jt.args.collect { String arg ->
-                    if (arg.contains("\"")) {
-                        arg = arg.replace("\"", "\"\"");
-                    }
-                    // Replace ticks with double ticks
-                    if (arg.contains("\'")) {
-                        arg = arg.replace("\'", "\'\'");
-                    }
-                    if (arg.contains(" ")) {
-                        arg = "'" + arg + "'"
-                    }
-                    arg
-                }
-                printer.println "Arguments=\"${args.join(' ')}\""
+                printer.println "Arguments=\"${escapeForCondorSubmit(jt.args)}\""
             }
 
             // If the working directory has been set, configure it.
@@ -220,6 +202,10 @@ Log=${workflow.logFile}
             printer.println "#"
             printer.println "### END Condor Job Template File ###"
         }
+    }
+
+    static String escapeForCondorSubmit(List<String> entries) {
+        entries.collect { (it.contains(" ") || it.contains("'")) ? "'" + it.replace("'", "''") + "'" : it }.join(" ").replace('"', '""')
     }
 
     private String replacePathPlaceholders(String path) {
