@@ -32,30 +32,26 @@ An item for `TestWorkflow` should appear in the run configurations menu.  It con
 The reason for running inside IntelliJ is setting the classpath, but that can be done from the command line as well.  
 There is a Gradle build, so in the `Gondor` dir you can do:
 
-
-```
-# gradle jar
-:compileJava UP-TO-DATE
-:compileGroovy
-warning: [options] bootstrap class path not set in conjunction with -source 1.6
-Note: /Users/jim/Downloads/xxx/Gondor/src/org/ifcx/gondor/NullSecurityManager.java uses or overrides a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
-Note: Some input files use unchecked or unsafe operations.
-Note: Recompile with -Xlint:unchecked for details.
-1 warning
-:processResources
-:classes
-:jar
-
-BUILD SUCCESSFUL
-
-Total time: 9.901 secs
-
-$ CLASSPATH=build/libs/Gondor-0.1.jar groovy scripts/TestWorkflow.groovy
-
-Generated 2 jobs for Condor DAG TestWorkflow.dag
-```
-
+    $ gradle jar
+    :compileJava UP-TO-DATE
+    :compileGroovy
+    warning: [options] bootstrap class path not set in conjunction with -source 1.6
+    Note: /Users/jim/Downloads/xxx/Gondor/src/org/ifcx/gondor/NullSecurityManager.java uses or overrides a deprecated API.
+    Note: Recompile with -Xlint:deprecation for details.
+    Note: Some input files use unchecked or unsafe operations.
+    Note: Recompile with -Xlint:unchecked for details.
+    1 warning
+    :processResources
+    :classes
+    :jar
+    
+    BUILD SUCCESSFUL
+    
+    Total time: 9.901 secs
+    
+    $ CLASSPATH=build/libs/Gondor-0.1.jar groovy scripts/TestWorkflow.groovy
+    
+    Generated 2 jobs for Condor DAG TestWorkflow.dag
 
 That should generate a file `TestWorkflow.dag` and a directory `TestWorkflow.jobs`.
 
