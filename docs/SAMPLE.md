@@ -1,4 +1,9 @@
-# Gondor Examples
+---
+layout: page
+title: Gondor Samples 
+---
+
+# Gondor Samples
 
 ```groovy
 #!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar groovy
