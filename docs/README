@@ -1,0 +1,9 @@
+Building Condor-JDRMAA
+======================
+
+To compile Condor-JDRMAA library, both ant and a Java SDK 1.5 or above or required.
+
+If your system has these installed, simply run "ant" to run the build using the
+included build.xml file. At the conclusion of running ant, you
+should have a directory named 'dist' with the Java jar file condor-jdrmaa-xxx.jar
+in it, where xxx is the version number.
