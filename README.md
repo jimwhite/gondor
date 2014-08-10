@@ -32,7 +32,7 @@ An item for `TestWorkflow` should appear in the run configurations menu.  It con
 The reason for running inside IntelliJ is setting the classpath, but that can be done from the command line as well.  
 There is a Gradle build, so in the `Gondor` dir you can do:
 
-```groovy
+```bash
 $ gradle jar
 :compileJava UP-TO-DATE
 :compileGroovy
