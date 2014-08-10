@@ -1,4 +1,4 @@
-#!/usr/bin/env CLASSPATH=../build/libs/Gondor-0.1.jar /Users/jim/Projects/Groovy/groovy-2.3.0/bin/groovy
+#!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar groovy
 
 import com.beust.jcommander.Parameter
 import groovy.transform.Field
@@ -27,10 +27,17 @@ import java.util.regex.Pattern
 
 // cat(paths:[path, *paths].collect { (ls(path:it) | grep(pat:pattern, lineNumbers:true)).output }) >> result
 
+println pattern
+println result
+println path
+println paths
+
 result.withPrintWriter {
     out = it
+//    [path, *paths].each { File dir -> dir.listFiles().each { println it } }
 //    [path, *paths].each { File dir -> dir.listFiles().name.findAll { pattern.matcher(it).find() }.each { println it } }
-    [path, *paths].each { File dir -> dir.listFiles().name.findAll { it =~ pattern  }.each { println it } }
+    [path, *paths].each { File dir -> dir.listFiles()*.name.findAll { it =~ pattern  }.each { println it } }
 }
 
+// The value of the last expression is the result of this script and will be our process' exit code.
 0

@@ -3,7 +3,7 @@ package org.ifcx.gondor
 import com.beust.jcommander.Parameter
 
 import org.ggf.drmaa.JobTemplate
-
+import org.ifcx.gondor.api.Initializer
 import org.ifcx.gondor.api.InputDirectory
 import org.ifcx.gondor.api.InputFile
 import org.ifcx.gondor.api.OutputDirectory
@@ -23,20 +23,22 @@ import java.lang.reflect.Field
 
 class Command extends Closure<Process>
 {
-    String commandPath
+    final WorkflowScript _workflow
+    final private String _commandPath
 
-    private Closure<JobTemplate> jobTemplateCustomizer // = { it }
-    private WorkflowScript workflowScript
+    Closure<JobTemplate> jobTemplateCustomizer // = { it }
 
-    Command(WorkflowScript workflowScript, String path, @DelegatesTo(Command) Closure desc) {
+    Command(WorkflowScript workflow, String path, @DelegatesTo(Command) Closure desc) {
         super(desc.owner)
-        this.workflowScript = workflowScript
-        this.commandPath = path
+        this._workflow = workflow
+        this._commandPath = path
         desc.delegate = this
         desc.call(this)
     }
 
-    final static def VARARGS_PARAMETER_NAME = '_args'
+    final static def VARARGS_PARAMETER_NAME = ':args'
+
+    public static boolean isProcessParameter(String name) { name.startsWith(':') }
 
     /** TODO: Convert these to enums. **/
 
@@ -48,15 +50,24 @@ class Command extends Closure<Process>
 
     def type = EXECUTABLE
 
-    Map<String, Object> argumentDefaultValues = [:]
+    Map<String, Object> _argumentDefaultValues = [:]
     List<Closure> args = []
+
+    WorkflowScript getWorkflowScript() { _workflow }
+
+    String getCommandPath() { _commandPath }
+
+    Map<String, Object> getArgumentDefaultValues() {
+        _argumentDefaultValues
+    }
 
     def flag(String lit, Closure pat = { it }) {
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             switch (pat.maximumNumberOfParameters) {
+                case 0 : addArguments(a, pat()) ; break
                 case 1 : addArguments(a, pat(lit)) ; break
-                case 2 : addArguments(a, pat(m, lit)) ; break
-                default : addArguments(a, pat(p, m, lit))
+                case 2 : addArguments(a, pat(lit, m)) ; break
+                default : addArguments(a, pat(lit, m, p))
             }
         }
     }
@@ -84,9 +95,24 @@ class Command extends Closure<Process>
         }
     }
 
+    def arg(String name, Object val = REQUIRED, Map mappings) {
+        addArgumentName(name, val)
+        args << { List<String> a, WorkflowScript w, Process p, Map m ->
+            def v = m[name]
+            if (v.is(REQUIRED)) {
+                System.err.println "Warning: Missing argument value for '$name' in command ${getCommandPath()}"
+            } else if (!v.is(OPTIONAL)) {
+                (v instanceof Collection ? v.flatten() : [v]).each { addArguments(a, mapArgument(name, mappings, it)) }
+//                    def vs = pat(it)
+//                    (vs instanceof Collection ? vs.flatten() : [vs]).each { addArguments(a, it) }
+//                }
+            }
+        }
+    }
+
     def arg(Map m) {
         if (m.containsKey('format')) {
-            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, (Closure) m.format)
+            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, m.format)
         } else {
             arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED)
         }
@@ -97,7 +123,7 @@ class Command extends Closure<Process>
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             resolveFileArgument(m, name).each { File f ->
                 if (val != null) {
-                    System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
+                    System.err.println "Warning: File argument $name in command $_commandPath must have value $val but is given $f"
                 }
                 p.infiles << f
                 addArguments(a, pat(f))
@@ -119,8 +145,8 @@ class Command extends Closure<Process>
         addArgumentName(name, val)
         args << { List<String> a, WorkflowScript w, Process p, Map m ->
             resolveFileArgument(m, name).each { File f ->
-                if (val != null) {
-                    System.err.println "Warning: File argument $name in command $commandPath must have value $val but is given $f"
+                if (val != null && val != f) {
+                    System.err.println "Warning: File argument ${name} in command ${getCommandPath()} must have value $val but is given $f"
                 }
                 p.outfiles << f
                 addArguments(a, pat(f))
@@ -143,10 +169,10 @@ class Command extends Closure<Process>
     }
 
     void addArgumentName(String name, Object val) {
-        if (argumentDefaultValues.containsKey(name)) {
-            System.err.println "Warning: Duplicated argument name '$name' in command $commandPath"
+        if (getArgumentDefaultValues().containsKey(name)) {
+            System.err.println "Warning: Duplicated argument name '$name' in command $_commandPath"
         }
-        argumentDefaultValues[name] = val
+        getArgumentDefaultValues()[name] = val
     }
 
     /**
@@ -161,7 +187,7 @@ class Command extends Closure<Process>
         def f = map[s]
         // Don't do automatic coercion of strings to files for now to cut down on silent bugs.
         // (f instanceof String) ? new File(f) : ((f instanceof GString) ? new File(f.toString()) : f)
-        f instanceof Collection ? f : (f != null ? [f] : null)
+        f instanceof Collection ? f.flatten() : (f != null ? [f] : null)
     }
 
     public static List<String> stringify(v) {
@@ -172,35 +198,56 @@ class Command extends Closure<Process>
         a.addAll(stringify(v))
     }
 
+    static mapArgument(String name, Map mappings, def v) {
+        if (!mappings.containsKey(v)) {
+            throw new IllegalArgumentException("Argument '$name' should have a value in ${mappings.keySet()} but got '$v'.")
+        }
+        def mapping = mappings[v]
+        (mapping instanceof Closure) ? mapping(v) : mapping
+    }
+
 //    static String stringifyFile(File file) { file.path }
 
     // This is a Gondor command in Groovy.  Get the metadata from the annotations.
     def _groovy() {
-        println "Inspecting Groovy command $commandPath"
+        println "Inspecting Groovy command $_commandPath"
 
-        def parameters = getParameterAnnotations()
+        GroovyShell shell = new GroovyShell()
+        Script script = shell.parse(new File(_commandPath))
+        Class scriptClass = script.getClass();
+
+        def parameters = getParameterAnnotations(scriptClass)
 
         if (parameters) {
-            parameters.each { println it }
+            parameters.each {
+                println it
+                Class initializer = it.initializer?.value()
+                if (initializer) {
+                    def val = ((Closure) (initializer.newInstance(script, script))).call()
+                    println(val)
+                    it.value = val
+                }
+            }
             println "${parameters.size()} parameters"
-
-//            // If there is an varargs (unnamed) parameter, put it at the end.
-//            if (!parameters.first().name) {
-//                parameters.add(parameters.remove(0))
-//            }
 
             parameters.each { parameter ->
                 def name = parameter.name ?: VARARGS_PARAMETER_NAME
                 if (parameter.infile) {
                     if (parameter.outfile) {
-                        System.err.println "Error: Parameter ${it.name} in $commandPath is marked as both an infile and an outfile."
+                        System.err.println "Error: Parameter ${it.name} in $_commandPath is marked as both an infile and an outfile."
                     }
-                    parameter.name ? infile(name:name, format: {[name, it]}) : infile(name:name)
+                    def value = null
+                    if (parameter.initializer) value = parameter.value
+                    parameter.name ? infile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : infile(name:name)
                 } else if (parameter.outfile) {
-                    parameter.name ? outfile(name:name, format: {[name, it]}) : outfile(name:name)
+                    def value = null
+                    if (parameter.initializer) value = parameter.value
+                    parameter.name ? outfile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : outfile(name:name)
                 } else {
                     if (parameter.name) {
-                        arg(name: name, value:parameter.required ? REQUIRED : OPTIONAL, format:{ [name, it] })
+                        def value = parameter.required ? REQUIRED : OPTIONAL
+                        if (parameter.initializer) value = parameter.value
+                        arg(name: name, value: value, format:{ [name, it] })
                     } else {
                         arg(name:VARARGS_PARAMETER_NAME, value:parameter.required ? REQUIRED : OPTIONAL)
                     }
@@ -209,11 +256,8 @@ class Command extends Closure<Process>
         }
     }
 
-    def getParameterAnnotations() {
+    def getParameterAnnotations(Class cls) {
         def parameters = []
-        GroovyShell shell = new GroovyShell()
-        Script script = shell.parse(new File(commandPath))
-        Class cls = script.getClass();
         while (cls != null) {
             Field[] fields = cls.declaredFields;
             for (Field field : fields) {
@@ -225,22 +269,23 @@ class Command extends Closure<Process>
                     def name = annotation.names()?.size() ? annotation.names().first() : null
                     def infile = (field.getAnnotation(InputFile.class) != null || field.getAnnotation(InputDirectory.class) != null )
                     def outfile = (field.getAnnotation(OutputFile.class) != null || field.getAnnotation(OutputDirectory.class) != null )
-                    parameters << [name: name, required:annotation.required(), infile:infile, outfile:outfile]
+                    def initializer = field.getAnnotation(Initializer.class)
+                    parameters << [name: name, required:annotation.required(), initializer:initializer, infile:infile, outfile:outfile]
                 }
             }
 
             cls = cls.getSuperclass();
         }
 
-        // Sort by the first name is the names list, if any.
-        // The "no name" parameter (empty array for names()), if there is one, will be first with standard sort.
-        // parameters.sort { it.name }
-        // But if there is an varargs (unnamed) parameter it should be at the end.
-        // Use a comparator that says false (null or empty strings) is greater than anything.
-        parameters.sort { a, b -> a.name ? (b.name ? a.name <=> b.name : 0) : 1 }
-    }
+//        // Sort by the first name is the names list, if any.
+//        // The "no name" parameter (empty array for names()), if there is one, will be first with standard sort.
+//        // parameters.sort { it.name }
+//        // But if there is an varargs (unnamed) parameter it should be at the end.
+//        // Use a comparator that says false (null or empty strings) is greater than anything.
+//        parameters.sort { a, b -> a.name ? (b.name ? a.name <=> b.name : 0) : 1 }
 
-    WorkflowScript getWorkflowScript() { workflowScript }
+        parameters
+    }
 
     /**
      * Since we allow optional arguments, we might get called with none, so handle that case
@@ -255,9 +300,9 @@ class Command extends Closure<Process>
      * in the workflow with the given parameter values.
      */
     Process call(Map params, Object... args) {
-        def p = params.clone()
+        Map<String, Object> p = (Map) params.clone()
         p[VARARGS_PARAMETER_NAME] = args as List
-        workflowScript.process(this, p)
+        call(p)
     }
 
     /**
@@ -265,30 +310,7 @@ class Command extends Closure<Process>
      * in the workflow with the given parameter values.
      */
     Process call(Map params) {
-        workflowScript.process(this, params)
+        getWorkflowScript().process(this, params)
     }
 
-    JobTemplate createJobTemplate(Process process) {
-        JobTemplate jt = workflowScript.createJobTemplate()
-
-        jt.remoteCommand = process.command.getCommandPath()
-
-        List<String> jobArgs = []
-        args.each { Closure ac ->
-            ac(jobArgs, getWorkflowScript(), process, process.params)
-        }
-        jt.args = jobArgs
-
-        if (process._stdin != null) jt.setInputPath(process._stdin.path)
-        if (process._stdout != null) jt.setOutputPath(process._stdout.path)
-        if (process._stderr != null) jt.setErrorPath(process._stderr.path)
-
-        if (jobTemplateCustomizer) jobTemplateCustomizer(jt)
-
-        jt
-    }
-
-    File newTemporaryFile(String s) {
-        getWorkflowScript().newTemporaryFile(commandPath.replaceAll(/\W/, /_/), s)
-    }
 }

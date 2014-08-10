@@ -81,7 +81,7 @@ import java.util.Set;
  * @since 0.4.2
  * @version 1.0
  */
-public abstract interface JobTemplate {
+public interface JobTemplate {
     /**
      * Means the job has been queued but it is not
      * eligible to run.  Used with the jobSubmissionState property.

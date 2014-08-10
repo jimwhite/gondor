@@ -1,4 +1,4 @@
-#!/usr/bin/env CLASSPATH=../build/libs/Gondor-0.1.jar groovy
+#!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar groovy
 
 import com.beust.jcommander.Parameter
 import groovy.transform.Field
@@ -7,6 +7,8 @@ import org.ifcx.gondor.api.InputDirectory
 import org.ifcx.gondor.api.OutputFile
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
+
+copyEnvironment('PATH')
 
 // Define a command for /bin/ls.  It takes an optional file path argument.
 def ls = command(path:'/bin/ls') { infile 'path' }
@@ -50,6 +52,6 @@ def cat = command(path:'/bin/cat') { infile 'paths' }
 cat(paths:[path, *paths].collect { (ls(path:it) |
         grep(pat:pattern, ignoreCase:true, lineNumbers:true)).output }) >> new File("bin-${result.name}")
 
-def fileListGrep = groovy(path:"../scripts/FileListGrepCommand.groovy")
+def fileListGrep = groovy(path:"scripts/FileListGrepCommand.groovy")
 
 fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths) >>> new File('flsgrep-err.txt')

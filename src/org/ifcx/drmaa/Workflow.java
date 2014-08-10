@@ -1,5 +1,6 @@
 package org.ifcx.drmaa;
 
+import org.ggf.drmaa.DrmaaException;
 import org.ggf.drmaa.Session;
 
 import java.io.File;
@@ -14,6 +15,8 @@ public interface Workflow extends Session {
 
 //    Set<String> getParentJobIds(String childJobId);
     void addToParentJobIds(String childJobId, String parentJobId);
+
+    String runWorkflow(File dagFile) throws DrmaaException;
 
     void createDAGFile(File dagFile);
 

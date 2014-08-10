@@ -5,7 +5,9 @@ import org.ifcx.gondor.Command
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript workflowScript
 
 void init(String contact) {
-    setWorkflowName(getWorkflowName() + 'Workflow')
+    // Can't change workflow name after class initialization.
+    // Specify a different name on the command line if you want a different name than the default (class name).
+    // setWorkflowName(getWorkflowName() + 'Workflow')
     super.init("jim")
 }
 
@@ -22,7 +24,7 @@ workflowScript.with {
     jt.outputPath = "good_here.txt"
     runJob(jt)
 
-    jt.remoteCommand = "../scripts/ls_here"
+    jt.remoteCommand = "scripts/ls_here"
     jt.outputPath = "good_up_then_here.txt"
     runJob(jt)
 

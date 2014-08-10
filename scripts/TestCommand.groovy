@@ -1,20 +1,24 @@
 #!/usr/bin/env groovy
 
 import com.beust.jcommander.Parameter
+import com.beust.jcommander.converters.BaseConverter
 import groovy.transform.Field
 import groovyx.cli.JCommanderScript
-import org.ifcx.gondor.Command
+import groovyx.cli.PatternConverter
+
+import java.util.regex.Pattern
 
 @groovy.transform.BaseScript JCommanderScript thisScript
 
-@Parameter @Field File path
+@Parameter(names='--path') @Field File path
 
-@Parameter @Field String pat
+//@Parameter(names='--pattern', converter = { java.util.regex.Pattern.compile(it) } ) @Field Pattern pat
+@Parameter(names='--pattern', converter = groovyx.cli.PatternConverter.class ) @Field pat
 
-def ls = command(path:'/bin/ls') { infile 'path' }
+@Parameter @Field List<File> paths = []
 
-def grep = command(path:'/usr/bin/grep') { arg 'pat', Command.REQUIRED, { it } }
+@Parameter(names=['--help', '-h'], help=true, arity=-1) @Field String foo
 
-// (ls(path:'.') | grep(pat:/Work/)) >> new File('grep_out.txt')
-(ls(path:path) | grep(pat:pat)) >> new File('grep_out.txt')
+[path, *paths].each { File dir -> dir.listFiles()*.name.findAll { pat.matcher(it).matches() }.each { println it } }
 
+0
