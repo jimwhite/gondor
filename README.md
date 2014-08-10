@@ -59,44 +59,6 @@ That should generate a file `TestWorkflow.dag` and a directory `TestWorkflow.job
 
 The DAGman workflow can then be submitted in the usual way:
 
-{% highlight text %}
-$ condor_submit_dag TestWorkflow.dag
-{% endhighlight %}
-
-<!--
-```bash
-Script path: [parent]/Gondor/scripts/TestWorkflow.groovy
-Module: gondor
-VM options: -Dorg.ggf.drmaa.SessionFactory=net.sf.igs.SessionFactoryImpl -Dorg.ifcx.drmaa.WorkflowFactory=org.ifcx.gondor.WorkflowFactoryImpl
-Working dir: [parent]/Gondor/scripts
 ```
-
-```bash
-$ gradle jar
-:compileJava UP-TO-DATE
-:compileGroovy
-warning: [options] bootstrap class path not set in conjunction with -source 1.6
-Note: /Users/jim/Downloads/xxx/Gondor/src/org/ifcx/gondor/NullSecurityManager.java uses or overrides a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
-Note: Some input files use unchecked or unsafe operations.
-Note: Recompile with -Xlint:unchecked for details.
-1 warning
-:processResources
-:classes
-:jar
-
-BUILD SUCCESSFUL
-
-Total time: 9.901 secs
-
-$ CLASSPATH=build/libs/Gondor-0.1.jar groovy scripts/TestWorkflow.groovy
-
-Generated 2 jobs for Condor DAG TestWorkflow.dag
-
-That should generate a file TestWorkflow.dag and a directory TestWorkflow.jobs.
-
-The DAGman workflow can then be submitted in the usual way:
-
 $ condor_submit_dag TestWorkflow.dag
 ```
--->
