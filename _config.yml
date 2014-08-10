@@ -12,3 +12,9 @@ markdown: kramdown
 permalink: pretty
 safe: true
 lsi: false
+highlighter : pygments
+pygments: true
+
+syntax-highlighting:
+  enabled : true
+  css: syntax.css
