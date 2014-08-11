@@ -8,12 +8,11 @@ twitter_username: oohtml
 github_username:  jimwhite
 
 # Build settings
-markdown: kramdown
+markdown: redcarpet
 permalink: pretty
 safe: true
 lsi: false
 highlighter : pygments
-pygments: true
 
 syntax-highlighting:
   enabled : true

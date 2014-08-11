@@ -5,7 +5,7 @@ title: Gondor Samples
 
 # Gondor Samples
 
-```groovy
+``` groovy
 #!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar groovy
 
 import com.beust.jcommander.Parameter
