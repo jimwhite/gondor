@@ -8,7 +8,23 @@ import org.ifcx.gondor.api.OutputFile
 
 @groovy.transform.BaseScript org.ifcx.gondor.WorkflowScript thisScript
 
+@Parameter(names = ['--path', 'path'], description = 'Path to directory for the first file list.')
+@InputDirectory @Field File path
+
+@Parameter(names = ['--pattern', '--regex', 'pattern', 'regex'], description = 'Regular expression to filter with.')
+@Field String pattern
+
+@Parameter(names = ['--result', 'result'], description = 'Output file.')
+@OutputFile @Field File result
+
+@Parameter(description = 'A list of directory paths for additional file lists')
+@InputDirectory @Field List<File> paths
+
 copyEnvironment('PATH')
+
+environment.FOO = 'hey there! what\'s up "doc"?'
+environment.BAR = "/yo /   3 spaces'path /"
+// environment.'X=Y' = 'Z'  // Check that we can catch bad names.
 
 // Define a command for /bin/ls.  It takes an optional file path argument.
 def ls = command(path:'/bin/ls') { infile 'path' }
@@ -33,18 +49,6 @@ def grep = command(path:'/usr/bin/grep') {
 
 def cat = command(path:'/bin/cat') { infile 'paths' }
 
-@Parameter(names = '--path', description = 'Path to directory for the first file list.')
-@InputDirectory @Field File path
-
-@Parameter(names = ['--pattern', '--regex'], description = 'Regular expression to filter with.')
-@Field String pattern
-
-@Parameter(names = '--result', description = 'Output file.')
-@OutputFile @Field File result
-
-@Parameter(description = 'A list of directory paths for additional file lists')
-@InputDirectory @Field List<File> paths
-
 // (ls(path:path) | grep(pat:pattern)) >> result
 
 // (ls() | grep(pat:/est/, lineNumbers:true)) >> new File('grep_with_numbers.txt')
@@ -55,3 +59,13 @@ cat(paths:[path, *paths].collect { (ls(path:it) |
 def fileListGrep = groovy(path:"scripts/FileListGrepCommand.groovy")
 
 fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths) >>> new File('flsgrep-err.txt')
+
+groovy(path:"scripts/EchoEnvironment.groovy").call() >> new File(new File("."), "env-dump.txt")
+// That can also be done this way, but it isn't very obvious that we're calling the closure,
+// especially when there are no parameters being passed in the call.
+// groovy(path:"scripts/EchoEnvironment.groovy")() >> new File(new File("."), "env-dump.txt")
+
+// Can't do any of these because spaces are not allowed in paths (and don't use commas either).
+//groovy(path:"scripts/EchoEnvironment.groovy")() >> new File(new File("this dir name has spaces"), "env_dump1.txt")
+//groovy(path:"scripts/EchoEnvironment.groovy")() >> new File(new File(" this dir name has spaces"), " env_dump2.txt")
+//groovy(path:"scripts/EchoEnvironment.groovy")() >> new File(new File(new File("."), "this dir name has spaces"), "env_dump3.txt")

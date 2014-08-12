@@ -29,6 +29,8 @@ import org.ggf.drmaa.PartialTimestampFormat
 import org.ggf.drmaa.UnsupportedAttributeException
 import org.ifcx.drmaa.GondorJobTemplate
 
+import java.util.regex.Pattern
+
 /**
  * This class represents a remote job and its attributes.  It is used to
  * set up the environment for a job to be submitted.
@@ -249,8 +251,22 @@ public class JobTemplateImpl implements GondorJobTemplate
      * @throws DrmaaException {@inheritDoc}
      */
     public void setJobEnvironment(Map env) throws DrmaaException {
-        jobEnvironment = Collections.unmodifiableMap(env.collectEntries { k, v -> [k.toString(), v.toString()] });
+        jobEnvironment = Collections.unmodifiableMap(env.collectEntries { k, v ->
+            // Check variable names for conformance to POSIX standard to ensure portability.
+            // Open Group Base Specifications Issue 6 - Section 8 Environment Variables
+            // http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap08.html
+            // Actually let's not.  Instead we just check for things that would break Condor.
+            String n = k.toString()
+            if (!n.matches(goodEnvName)) throw new InvalidAttributeValueException("Impermissible character(s) in environment variable name: $n")
+            [n, v.toString()]
+        });
     }
+
+    /**
+     * Pattern for permitted environment variable names.
+     * Any visible POSIX character except space (/ /), single quote (/'/), double quote (/"/), and equals sign (/=/).
+     */
+    static Pattern goodEnvName = ~/[\p{Graph}&&[^'"=]]+/
 
     /**
      * {@inheritDoc}

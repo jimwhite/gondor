@@ -8,7 +8,7 @@ import org.ifcx.drmaa.GondorJobTemplate
 class SubDAG extends Job {
 
     Job init(File dagFile) {
-        def jobId = nextJobId(defaultJobTemplateName(dagFile.path))
+        id = nextJobId(defaultJobTemplateName(dagFile.path))
         String jobComment = "Workflow ${dagFile.path}"
         comment = jobComment
         /*procId: -1,*/

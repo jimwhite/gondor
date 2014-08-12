@@ -86,33 +86,27 @@ Log=${workflow.logFile}
             // Handle the case of the user/caller setting the environment for the job.
             if (jt.jobEnvironment) {
                 // This is the Condor directive for setting the job environment.
-                def envArgsValue = jt.jobEnvironment.collect { String k, String v -> k + '=' + v.replaceAll('"', '""') }
-                printer.println "Environment = \"${envArgsValue.join(' ')}\""
+                // See <http://research.cs.wisc.edu/htcondor/manual/v8.0/condor_submit.html#man-condor-submit-environment>.
+                // We use the "new" format of course which involves escaping ' and " by repeating them and
+                // surrounding spaces with a pair of single quotes.
+                // Should check for/complain about sketchy variable names (suitable POSIX specs?).
+                // That test is being done now in JobTemplateImpl.
+                // Still kinda late since it doesn't fail as soon as the user's script gives us (Gondor) the bad value.
+                List<String> envEntries = jt.jobEnvironment.collect { k, v -> "$k=$v" }
+                printer.println "Environment=" + escapeForCondorSubmit(envEntries)
             }
 
             // Here we handle the job arguments, if any have been supplied.
             // We try to adhere to the "new" way of specifying the arguments
             // as explained in the 'condor_submit' man page.
+            // <http://research.cs.wisc.edu/htcondor/manual/v8.0/condor_submit.html#man-condor-submit-arguments>
             if (jt.args) {
-                def args = jt.args.collect { String arg ->
-                    if (arg.contains("\"")) {
-                        arg = arg.replace("\"", "\"\"");
-                    }
-                    // Replace ticks with double ticks
-                    if (arg.contains("\'")) {
-                        arg = arg.replace("\'", "\'\'");
-                    }
-                    if (arg.contains(" ")) {
-                        arg = "'" + arg + "'"
-                    }
-                    arg
-                }
-                printer.println "Arguments=\"${args.join(' ')}\""
+                printer.println "Arguments=" + escapeForCondorSubmit(jt.args)
             }
 
             // If the working directory has been set, configure it.
             if (jt.workingDirectory != null) {
-                printer.println "InitialDir=" + replacePathPlaceholders(jt.workingDirectory)
+                printer.println "InitialDir=" + formatPathForCondorSubmit(jt.workingDirectory)
             }
 
             // Handle any native specifications that have been set
@@ -149,32 +143,31 @@ Log=${workflow.logFile}
             // Handle the job input path. Care must be taken to replace DRMAA tokens
             // with tokens that Condor understands.
             if (jt.getInputPath() != null) {
-                String input = replacePathPlaceholders(jt.inputPath)
-                printer.println("Input=" + input)
+                printer.println "Input=" + formatPathForCondorSubmit(jt.inputPath)
 
                 // Check whether to transfer the input files
                 if (jt.transferFiles?.inputStream) {
-                    printer.println("transfer_input_files=" + input);
+                    printer.println("transfer_input_files=" + formatPathForCondorSubmit(jt.inputPath));
                 }
             }
 
             // Handle the job output path. Care must be taken to replace DRMAA tokens
             // with tokens that Condor understands.
             if (jt.outputPath) {
-                String output = replacePathPlaceholders(jt.outputPath)
-                printer.println("Output=" + output);
+                printer.println("Output=" + formatPathForCondorSubmit(jt.outputPath));
 
                 // Check if we need to join input and output files
+                // FIXME: Condor manual sez this won't work.  Quite likely since this probably hasn't been tested.
+                // Actually there is a test in the suite, so the story isn't clear here.
                 if (jt.joinFiles) {
                     printer.println("# Joining Input and Output");
-                    printer.println("Error=" + output);
+                    printer.println("Error=" + formatPathForCondorSubmit(jt.outputPath));
                 }
             }
 
             // Handle the error path if specified. Do token replacement if necessary.
             if (! jt.joinFiles && jt.errorPath) {
-                String errorPath = replacePathPlaceholders(jt.errorPath)
-                printer.println("Error=" + errorPath)
+                printer.println("Error=" + formatPathForCondorSubmit(jt.errorPath))
             }
 
             if (jt.transferFiles?.outputStream) {
@@ -193,7 +186,7 @@ Log=${workflow.logFile}
             if (workflow.contact) emails.add(workflow.contact)
             if (jt.email) emails.addAll(jt.email)
             if (emails) {
-                printer.println("Notify_user=" + emails.join(","))
+                printer.println("Notify_user=" + escapeForCondorSubmit([emails.join(",")]))
             }
 
             // Should jobs be submitted into a holding pattern
@@ -208,6 +201,30 @@ Log=${workflow.logFile}
             printer.println "#"
             printer.println "### END Condor Job Template File ###"
         }
+    }
+
+    //FIXME: Appears that Condor does not allow file paths to have spaces in them, even though this is spelled out anywhere.
+    // A dodgy workaround is to specify the ClassAd variable directly like this:
+    // +Out ="this dir name has spaces/env_dump3.txt"
+    // But that is bound to have problems.  Plus there are things like the file transfer commands that expect
+    // a list of file paths separated by spaces and/or commas.
+    // The thing to do for now is probably to check for bad names and complain.
+    // The docs do say this though:
+    //          All path names specified in the submit description file must be less than 256 characters in length,
+    //          and command line arguments must be less than 4096 characters in length; otherwise, condor_submit gives
+    //          a warning message but the jobs will not execute properly.
+
+    String formatPathForCondorSubmit(String path) { replacePathPlaceholders(path) }
+
+    static String escapeForCondorSubmit(List<String> entries) {
+        // The rules are:
+        //      If the entry contains a single quote or space then the whole thing is enclosed in single
+        // quotes and single quotes get doubled.
+        //      All double quotes in entries are doubled.
+        //      The entries are all separated by a space and the whole thing is enclosed in double quotes.
+        '"' + entries.collect {
+            (it.contains(" ") || it.contains("'")) ? "'" + it.replace("'", "''") + "'" : it
+        }.join(" ").replace('"', '""') + '"'
     }
 
     private String replacePathPlaceholders(String path) {
