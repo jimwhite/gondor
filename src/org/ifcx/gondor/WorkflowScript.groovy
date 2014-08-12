@@ -71,11 +71,17 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     }
 
     public WorkflowCommand workflow(Command command) {
-        new WorkflowCommand(command)
+        new WorkflowCommand(this, command)
     }
 
     public Process process(Command command, Map<String, Object> params) {
         Process process = new Process(this, command, params)
+        processes.add(process)
+        process
+    }
+
+    public Process process(WorkflowCommand command, Map<String, Object> params) {
+        Process process = new WorkflowProcess(this, command, params)
         processes.add(process)
         process
     }

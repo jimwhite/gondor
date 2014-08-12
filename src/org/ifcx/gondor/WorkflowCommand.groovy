@@ -9,20 +9,22 @@ class WorkflowCommand extends Command {
     // Alas recursive delegation to our own class using @Delegate is not supported.
     Command dagProducerCommand
 
-    WorkflowCommand(Command command) {
-        super(command.getWorkflowScript(), null, { _workflow(command) } )
+//    Command(WorkflowScript workflow, String path, @DelegatesTo(Command) Closure desc) {
+    WorkflowCommand(WorkflowScript workflow, Command command) {
+        super(workflow, null, { _workflow(command) } )
+        assert workflow == command.getWorkflowScript()
     }
 
     def _workflow(Command command) {
         dagProducerCommand = command
     }
 
-    @Override
-    Process call(Map params) {
-        Process process = dagProducerCommand.call(params)
-        process.setCommand(this)
-        process
-    }
+//    @Override
+//    Process call(Map params) {
+//        Process process = dagProducerCommand.call(params)
+//        process.setCommand(this)
+//        process
+//    }
 
 //    @Override
 //    String runJob(Process process) {
