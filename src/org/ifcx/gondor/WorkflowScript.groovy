@@ -5,7 +5,8 @@ import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.JobTemplate
 import org.ifcx.drmaa.Workflow
 import org.ifcx.drmaa.WorkflowFactory
-import org.ifcx.gondor.api.Initializer
+import groovyx.cli.Default
+import org.ifcx.gondor.api.OutputDirectory
 import org.ifcx.gondor.api.OutputFile
 
 public abstract class WorkflowScript extends GondorScript implements Workflow {
@@ -17,16 +18,29 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     @Delegate
     Workflow workflow
 
-    @Parameter(names=['workflowName'])
-//    @Initializer({ getClass().name })
-    String workflowName = getClass().name
+    @Parameter(names=['--workflowName', 'workflowName'])
+    @Default({ getClass().name })
+    String workflowName
 
-    @Parameter(names=Process.OUTPUT)
-//    @Initializer({ new File(it.workflowName + '.dag') })
-//    @Initializer({ -> dagFile })
-    @Initializer({ -> new File(workflowName + '.dag') })
-//    @OutputFile(name=Process.OUTPUT) File dagFile = new File(workflowName + '.dag')
-    @OutputFile File dagFile = new File(workflowName + '.dag')
+    @Parameter(names=[ '--workflowDirectory', 'workflowDirectory'])
+//    @Initializer({ -> new File((String) getScriptParameter('--workflowName')) })
+    @Default({ -> new File(workflowName) })
+    @OutputDirectory File workflowDirectory
+
+    @Parameter(names=['--force', 'force', '-f'])
+    boolean overwriteDirectories = false
+
+    // This can't/shouldn't be specified in command line.
+    // It is computed from the workflowDirectory parameter.
+    @Parameter(names='workflowDAGFile')
+//    @Initializer({ -> new File((File) getScriptParameter('--workflowDirectory'), DAG_FILE_NAME) })
+    @Default({ -> new File(workflowDirectory, DAG_FILE_NAME) })
+    @OutputFile File workflowDAGFile
+
+    static final String DAG_FILE_NAME = 'workflow.dag'
+    static final String FILE_DIR_NAME = 'files'
+    static final String LOG_DIR_NAME = 'logs'
+    static final String TMP_DIR_NAME = 'templates'
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
@@ -45,21 +59,25 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
         workflow.setWorkflowName(workflowName)
 
-//        setTemporaryFilesPath(workflowName + '.jobs')
-
-        init("")
-
         try {
+            init("")
+
             runWorkflowScriptBody()
 
             runJobsForProcesses()
 
             addWorkflowDependencies()
 
-            createDAGFile(dagFile)
+            createDAGFile(new File(getDirectory(FileType.WORKFLOW_DIR), DAG_FILE_NAME))
         } finally {
             exit()
         }
+    }
+
+    @Override
+    public void init(String contact) throws DrmaaException {
+        setTemporaryFilesPath(getDirectory(FileType.TMP_DIR).path)
+        workflow.init(contact)
     }
 
     public Command command(Map params, @DelegatesTo(Command) Closure description) {
@@ -81,6 +99,10 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     }
 
     public Process process(WorkflowCommand command, Map<String, Object> params) {
+        String subworkflowName = new File(command.getCommandPath()).name - ~/\.groovy$/
+        //FIXME: Default argument values for commands only work for the first/primary name.
+        // Probably need to canonicalize parameter names.
+        params.'--workflowDirectory' = new File(getDirectory(FileType.FILE_DIR), subworkflowName)
         Process process = new WorkflowProcess(this, command, params)
         processes.add(process)
         process
@@ -154,11 +176,27 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     File getDirectory(FileType type) {
         if (directories == null) {
             directories = [
-                    (FileType.JOB_DIR)   : new File("jobs")
-                    , (FileType.LOG_DIR) : new File("logs")
-                    , (FileType.TMP_DIR) : new File(workflow.getTemporaryFilesPath())
-                    , (FileType.WORKFLOW_DIR) : new File(".")
+                    (FileType.FILE_DIR)  : new File(workflowDirectory, FILE_DIR_NAME)
+                    , (FileType.LOG_DIR) : new File(workflowDirectory, LOG_DIR_NAME)
+                    , (FileType.TMP_DIR) : new File(workflowDirectory, TMP_DIR_NAME)
+                    , (FileType.WORKFLOW_DIR) : workflowDirectory
             ]
+
+            directories.each { FileType t, File d ->
+                if (d.exists()) {
+                    if (overwriteDirectories) {
+                        if (!d.deleteDir()) {
+                            throw new FailedFileSystemOperation("Failed to delete existing $t directory: $d")
+                        }
+                    } else {
+                        throw new IllegalWorkflowOperation("$t directory exists but we don't overwrite without --force: $d")
+                    }
+                }
+
+                if (!d.mkdirs()) {
+                    throw new FailedFileSystemOperation("Failed to create new $t directory: $d")
+                }
+            }
         }
 
         directories[type]

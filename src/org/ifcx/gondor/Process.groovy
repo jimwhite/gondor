@@ -87,7 +87,7 @@ class Process
 
     File newJobFile(String s) {
         if (jobDirectory == null) {
-            jobDirectory = workflow.newDirectory(FileType.JOB_DIR, command.getCommandPath().replaceAll(/\W/, /_/))
+            jobDirectory = workflow.newDirectory(FileType.FILE_DIR, command.getCommandPath().replaceAll(/\W/, /_/))
             if (!(jobDirectory.exists() || jobDirectory.mkdirs())) {
                 throw new FailedFileSystemOperation("File.mkdirs failed in Process.newJobFile for " + jobDirectory)
             }

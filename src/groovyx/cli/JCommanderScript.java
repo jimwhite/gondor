@@ -21,13 +21,17 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterDescription;
 import com.beust.jcommander.ParameterException;
 
+import groovy.lang.Binding;
 import groovy.lang.MissingPropertyException;
 import groovy.lang.Script;
-import groovyx.cli.Subcommand;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.join;
 
@@ -38,23 +42,41 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethods.join;
  */
 
 abstract public class JCommanderScript extends Script {
+    public JCommanderScript() { this(new Binding()); }
+
+    public JCommanderScript(Binding binding) {
+        super(binding);
+        initializeJCommanderScript();
+    }
+
+    @Override
+    public void setBinding(Binding binding) {
+        super.setBinding(binding);
+        initializeJCommanderScript();
+    }
+
     /**
      * Name of the property that holds the JCommander for this script (i.e. 'scriptJCommander').
      */
     public final static String SCRIPT_JCOMMANDER = "scriptJCommander";
 
+    private Binding initializedBinding;
+    private String[] initializedArgs;
+
     /**
      * The script body
      * @return The result of the script evaluation.
      */
-    protected abstract Object runScriptBody();
+    public abstract Object runScriptBody();
 
     @Override
     public Object run() {
         String[] args = getScriptArguments();
-        JCommander jc = getScriptJCommanderWithInit();
+        if (args != initializedArgs || getBinding() != initializedBinding) {
+            initializeJCommanderScript();
+        }
+        JCommander jc = (JCommander) getProperty(SCRIPT_JCOMMANDER);
         try {
-            parseScriptArguments(jc, args);
             for (ParameterDescription pd : jc.getParameters()) {
                 if (pd.isHelp() && pd.isAssigned()) return exitCode(printHelpMessage(jc, args));
             }
@@ -63,6 +85,73 @@ abstract public class JCommanderScript extends Script {
         } catch (ParameterException pe) {
             return exitCode(handleParameterException(jc, args, pe));
         }
+    }
+
+    public void initializeJCommanderScript() {
+        String[] args = getScriptArguments();
+        if (args != null) {
+            initializedBinding = getBinding();
+            initializedArgs = args;
+            JCommander jc = getScriptJCommanderWithInit();
+            parseScriptArguments(jc, args);
+            initializeScriptDefaults(jc, getAssignedParameterNames(jc));
+        } else {
+            System.err.println("Bad script caller (no arg binding).");
+        }
+    }
+
+    private Collection<String> getAssignedParameterNames(JCommander jc) {
+        List<ParameterDescription> parameters = jc.getParameters();
+        List<String> assignedNames = new ArrayList<String>(parameters.size());
+        for (ParameterDescription pd : parameters) {
+            if (pd.isAssigned()) assignedNames.add(pd.getLongestName());
+        }
+        return assignedNames;
+    }
+
+    public void initializeScriptDefaults(JCommander jc, Collection<String> assignedParameters) {
+        Class cls = this.getClass();
+        while (cls != null) {
+            Field[] fields = cls.getDeclaredFields();
+            for (Field field : fields) {
+                Annotation annotation = field.getAnnotation(Default.class);
+                if (annotation != null) {
+                    String longestParameterName = getLongestParameterName(jc, field);
+                    if (!assignedParameters.contains(longestParameterName)) {
+                        initializeScriptField(field, (Default) annotation);
+                    }
+                }
+            }
+
+            cls = cls.getSuperclass();
+        }
+    }
+
+    public void initializeScriptField(Field field, Default annotation) {
+        try {
+            field.setAccessible(true);
+            Class<Callable> klazz = ((Default) annotation).value();
+            Constructor<Callable> constructor = klazz.getConstructor(Object.class, Object.class);
+            Callable defaultCalculator = constructor.newInstance(this, this);
+            Object value = defaultCalculator.call();
+            field.set(this, value);
+        } catch (Exception e) {
+            printErrorMessage("Trying to run GondorScript initializers but got exception '" + e
+                    + "' when getting value of field " + field.getName());
+        }
+    }
+
+    private String getLongestParameterName(JCommander jc, Field field) {
+        Annotation annotation = field.getAnnotation(Parameter.class);
+        if (annotation != null) {
+            String name = "";
+            String[] names = ((Parameter) annotation).names();
+            for (String n : names) {
+                if (n.length() > name.length()) name = n;
+            }
+            return name;
+        }
+        return null;
     }
 
     /**
@@ -82,11 +171,29 @@ abstract public class JCommanderScript extends Script {
     /**
      * Return the script arguments as an array of strings.
      * The default implementation is to get the "args" property.
+     * If there is no "args" property (or binding) then return null.
      *
      * @return the script arguments as an array of strings.
      */
     public String[] getScriptArguments() {
-        return (String[]) getProperty("args");
+        try {
+            return (String[]) getProperty("args");
+        } catch (MissingPropertyException e) {
+            return null;
+        }
+    }
+
+    public Object getScriptParameter(String name) {
+        JCommander jc = (JCommander) getProperty(SCRIPT_JCOMMANDER);
+        for (ParameterDescription p : jc.getParameters()) {
+            for (String n : p.getParameter().names()) {
+                if (n.equals(name)) {
+                    return p.getObject();
+                }
+            }
+        }
+
+        throw new IllegalArgumentException("No parameter named '" + name + "' found.");
     }
 
     /**
@@ -95,7 +202,7 @@ abstract public class JCommanderScript extends Script {
      *
      * @return the JCommander for this script.
      */
-    protected JCommander getScriptJCommanderWithInit() {
+    public JCommander getScriptJCommanderWithInit() {
         try {
             JCommander jc = (JCommander) getProperty(SCRIPT_JCOMMANDER);
             if (jc == null) {

@@ -1,6 +1,7 @@
-package org.ifcx.gondor.api;
+package groovyx.cli;
 
 import java.lang.annotation.*;
+import java.util.concurrent.Callable;
 
 /**
  * Mark a parameter field as containing input file value(s).
@@ -11,6 +12,6 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface Initializer {
-    Class value();
+public @interface Default {
+    Class<Callable> value();
 }
