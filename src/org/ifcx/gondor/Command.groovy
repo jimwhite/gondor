@@ -1,8 +1,9 @@
 package org.ifcx.gondor
 
 import com.beust.jcommander.Parameter
+
 import org.ggf.drmaa.JobTemplate
-import groovyx.cli.Default
+import org.ifcx.gondor.api.Initializer
 import org.ifcx.gondor.api.InputDirectory
 import org.ifcx.gondor.api.InputFile
 import org.ifcx.gondor.api.OutputDirectory
@@ -215,21 +216,18 @@ class Command extends Closure<Process>
         Script script = shell.parse(new File(_commandPath))
         Class scriptClass = script.getClass();
 
-        //TODO: Specializations for WorkflowScript would go here.
-        // For now we only need the workflow name which WorkflowCommand is getting from the command path.
-
         def parameters = getParameterAnnotations(scriptClass)
 
         if (parameters) {
-//            parameters.each {
-//                println it
-//                Class initializer = it.initializer?.value()
-//                if (initializer) {
-//                    def val = ((Closure) (initializer.newInstance(script, script))).call()
-//                    println(val)
-//                    it.value = val
-//                }
-//            }
+            parameters.each {
+                println it
+                Class initializer = it.initializer?.value()
+                if (initializer) {
+                    def val = ((Closure) (initializer.newInstance(script, script))).call()
+                    println(val)
+                    it.value = val
+                }
+            }
             println "${parameters.size()} parameters"
 
             parameters.each { parameter ->
@@ -271,7 +269,7 @@ class Command extends Closure<Process>
                     def name = annotation.names()?.size() ? annotation.names().first() : null
                     def infile = (field.getAnnotation(InputFile.class) != null || field.getAnnotation(InputDirectory.class) != null )
                     def outfile = (field.getAnnotation(OutputFile.class) != null || field.getAnnotation(OutputDirectory.class) != null )
-                    def initializer = field.getAnnotation(Default.class)
+                    def initializer = field.getAnnotation(Initializer.class)
                     parameters << [name: name, required:annotation.required(), initializer:initializer, infile:infile, outfile:outfile]
                 }
             }

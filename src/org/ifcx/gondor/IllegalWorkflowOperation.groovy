@@ -1,6 +1,5 @@
 package org.ifcx.gondor
 
-import groovy.transform.InheritConstructors
 import org.ggf.drmaa.DrmaaException
 
 /**
@@ -10,6 +9,5 @@ import org.ggf.drmaa.DrmaaException
  * Time: 6:17 PM
  * To change this template use File | Settings | File Templates.
  */
-@InheritConstructors
 class IllegalWorkflowOperation extends DrmaaException {
 }
