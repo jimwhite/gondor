@@ -239,16 +239,16 @@ class Command extends Closure<Process>
                         System.err.println "Error: Parameter ${it.name} in $_commandPath is marked as both an infile and an outfile."
                     }
                     def value = null
-                    if (parameter.initializer) value = parameter.value
+//                    if (parameter.initializer) value = parameter.value
                     parameter.name ? infile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : infile(name:name)
                 } else if (parameter.outfile) {
                     def value = null
-                    if (parameter.initializer) value = parameter.value
+//                    if (parameter.initializer) value = parameter.value
                     parameter.name ? outfile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : outfile(name:name)
                 } else {
                     if (parameter.name) {
                         def value = parameter.required ? REQUIRED : OPTIONAL
-                        if (parameter.initializer) value = parameter.value
+//                        if (parameter.initializer) value = parameter.value
                         arg(name: name, value: value, format:{ [name, it] })
                     } else {
                         arg(name:VARARGS_PARAMETER_NAME, value:parameter.required ? REQUIRED : OPTIONAL)

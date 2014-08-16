@@ -46,13 +46,13 @@ abstract public class JCommanderScript extends Script {
 
     public JCommanderScript(Binding binding) {
         super(binding);
-        initializeJCommanderScript();
+//        initializeJCommanderScript();
     }
 
     @Override
     public void setBinding(Binding binding) {
         super.setBinding(binding);
-        initializeJCommanderScript();
+//        initializeJCommanderScript();
     }
 
     /**

@@ -5,9 +5,10 @@ import groovy.transform.InheritConstructors
 @InheritConstructors
 class WorkflowProcess extends Process
 {
-//    public WorkflowProcess(WorkflowScript workflow, WorkflowCommand command, Map<String, Object> params) {
-//        super(workflow, command, params)
-//    }
+    public WorkflowProcess(WorkflowScript workflow, WorkflowCommand command, Map<String, Object> params) {
+        super(workflow, command, params)
+        System.out.println params
+    }
 
     /**
      * A workflow process runs the dag-generating command as usual, but there is an additional job for
@@ -23,7 +24,7 @@ class WorkflowProcess extends Process
      */
     String runJob() {
         String dagFileJobId = super.runJob()
-        File dagFile = params.workflowDAGFile
+        File dagFile = params.'--workflowDAGFile'
         String subDAGJobId = getWorkflow().runWorkflow(dagFile)
         getWorkflow().addToParentJobIds(subDAGJobId, dagFileJobId)
         subDAGJobId

@@ -1,6 +1,8 @@
 package org.ifcx.gondor
 
 import com.beust.jcommander.Parameter
+import com.beust.jcommander.converters.BooleanConverter
+import groovy.transform.InheritConstructors
 import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.JobTemplate
 import org.ifcx.drmaa.Workflow
@@ -9,7 +11,13 @@ import groovyx.cli.Default
 import org.ifcx.gondor.api.OutputDirectory
 import org.ifcx.gondor.api.OutputFile
 
+// Can't use this AST transformation because it happens after ModuleNode generates looks for them.
+// @InheritConstructors
 public abstract class WorkflowScript extends GondorScript implements Workflow {
+    // Can just use @InheritConstructors for brevity and general future-proofing.
+    public WorkflowScript() { this(new Binding()) }
+    public WorkflowScript(Binding context) { super(context) }
+
     /**
      * The workflow script has delegated access (and can override) to all Workflow methods.
      * Note that this field isn't initialized until the <code>run</code> method is called.
@@ -19,21 +27,20 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     Workflow workflow
 
     @Parameter(names=['--workflowName', 'workflowName'])
-    @Default({ getClass().name })
+    @Default({ getOwner().getClass().name })
     String workflowName
 
     @Parameter(names=[ '--workflowDirectory', 'workflowDirectory'])
-//    @Initializer({ -> new File((String) getScriptParameter('--workflowName')) })
     @Default({ -> new File(workflowName) })
     @OutputDirectory File workflowDirectory
 
-    @Parameter(names=['--force', 'force', '-f'])
-    boolean overwriteDirectories = false
+    @Parameter(names=['--force', 'force', '-f'], converter = BooleanConverter.class)
+    @Default({ -> false })
+    boolean overwriteDirectories
 
     // This can't/shouldn't be specified in command line.
     // It is computed from the workflowDirectory parameter.
-    @Parameter(names='workflowDAGFile')
-//    @Initializer({ -> new File((File) getScriptParameter('--workflowDirectory'), DAG_FILE_NAME) })
+    @Parameter(names=['--workflowDAGFile', 'workflowDAGFile'])
     @Default({ -> new File(workflowDirectory, DAG_FILE_NAME) })
     @OutputFile File workflowDAGFile
 
@@ -68,7 +75,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
             addWorkflowDependencies()
 
-            createDAGFile(new File(getDirectory(FileType.WORKFLOW_DIR), DAG_FILE_NAME))
+            createDAGFile(workflowDAGFile)
         } finally {
             exit()
         }
@@ -100,9 +107,15 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     public Process process(WorkflowCommand command, Map<String, Object> params) {
         String subworkflowName = new File(command.getCommandPath()).name - ~/\.groovy$/
+        params.'--workflowName' = subworkflowName
         //FIXME: Default argument values for commands only work for the first/primary name.
         // Probably need to canonicalize parameter names.
-        params.'--workflowDirectory' = new File(getDirectory(FileType.FILE_DIR), subworkflowName)
+        def subworkflowDir = new File(getDirectory(FileType.WORKFLOW_DIR), subworkflowName)
+        params.'--workflowDirectory' = subworkflowDir
+        //FIXME: Idea is to use the script introspection to give us the computed properties.
+        params.'--workflowDAGFile' = new File(subworkflowDir, DAG_FILE_NAME)
+        params.'--force' = overwriteDirectories as String
+
         Process process = new WorkflowProcess(this, command, params)
         processes.add(process)
         process
