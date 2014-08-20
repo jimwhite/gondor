@@ -49,15 +49,21 @@ class Command extends Closure<Process>
 
     def type = EXECUTABLE
 
-    Map<String, Object> _argumentDefaultValues = [:]
+    private Map<String, Object> _argumentDefaultValues = [:]
     List<Closure> args = []
+    private String _varArgName = null
 
     WorkflowScript getWorkflowScript() { _workflow }
 
     String getCommandPath() { _commandPath }
 
-    Map<String, Object> getArgumentDefaultValues() {
-        _argumentDefaultValues
+    Map<String, Object> getArgumentDefaultValues() { _argumentDefaultValues }
+
+    String getVarArgsName() { _varArgName }
+
+    def vararg(String name) {
+        if (getVarArgsName()) { throw new IllegalArgumentException("Only one vararg parameter permitted.  Got $name and ${getVarArgsName()}.")}
+        _varArgName = name
     }
 
     def flag(String lit, Closure pat = { it }) {
@@ -111,7 +117,7 @@ class Command extends Closure<Process>
 
     def arg(Map m) {
         if (m.containsKey('format')) {
-            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, m.format)
+            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, (Closure) m.format)
         } else {
             arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED)
         }
@@ -240,8 +246,8 @@ class Command extends Closure<Process>
                     def value = null
 //                    if (parameter.initializer) value = parameter.value
                     if (cliName == VARARGS_PARAMETER_NAME) {
-                        infile(name: parameter.name, value: value)
-                        infile(name: VARARGS_PARAMETER_NAME, value: value)
+                        vararg(parameter.name)
+                        infile(name: parameter.name)
                     } else {
                         infile(name: parameter.name, value: value,
                                 format: isProcessParameter(cliName) ? { [] } : { [cliName, it] })
@@ -250,17 +256,17 @@ class Command extends Closure<Process>
                     def value = null
 //                    if (parameter.initializer) value = parameter.value
                     if (cliName == VARARGS_PARAMETER_NAME) {
-                        outfile(name: parameter.name, value: value)
-                        outfile(name:VARARGS_PARAMETER_NAME, value: value)
+                        vararg(parameter.name)
+                        outfile(name: parameter.name)
                     } else {
                         outfile(name: parameter.name, value: value,
                                 format: isProcessParameter(cliName) ? { [] } : { [cliName, it] })
                     }
                 } else {
                     if (cliName == VARARGS_PARAMETER_NAME) {
+                        vararg(parameter.name)
 //                        arg(name:parameter.name, value:parameter.required ? REQUIRED : OPTIONAL)
                         arg(name:parameter.name)
-                        arg(name:VARARGS_PARAMETER_NAME)
                     } else {
                         def value = parameter.required ? REQUIRED : OPTIONAL
 //                        if (parameter.initializer) value = parameter.value
@@ -316,7 +322,13 @@ class Command extends Closure<Process>
      */
     Process call(Map params, Object... args) {
         Map<String, Object> p = (Map) params.clone()
-        p[VARARGS_PARAMETER_NAME] = args as List
+
+        def varArgsName = getVarArgsName()
+        if (args.length > 0 && !varArgsName) {
+            throw new IllegalArgumentException("Call to command ${getCommandPath()} with varargs but it doesn't have a vararg parameter defined.")
+        }
+        p[varArgsName] = args as List
+
         call(p)
     }
 

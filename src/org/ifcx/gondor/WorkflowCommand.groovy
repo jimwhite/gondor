@@ -101,16 +101,6 @@ class WorkflowCommand extends Command {
     }
 
     @Override
-    Map<String, Object> get_argumentDefaultValues() {
-        return dagProducerCommand.get_argumentDefaultValues()
-    }
-
-    @Override
-    void set_argumentDefaultValues(Map<String, Object> _argumentDefaultValues) {
-        dagProducerCommand.set_argumentDefaultValues(_argumentDefaultValues)
-    }
-
-    @Override
     List<Closure> getArgs() {
         return dagProducerCommand.getArgs()
     }
@@ -133,6 +123,11 @@ class WorkflowCommand extends Command {
     @Override
     Map<String, Object> getArgumentDefaultValues() {
         return dagProducerCommand.getArgumentDefaultValues()
+    }
+
+    @Override
+    String getVarArgsName() {
+        return dagProducerCommand.getVarArgsName()
     }
 
     @Override
