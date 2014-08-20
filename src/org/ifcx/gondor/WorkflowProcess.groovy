@@ -24,7 +24,7 @@ class WorkflowProcess extends Process
      */
     String runJob() {
         String dagFileJobId = super.runJob()
-        File dagFile = params.'--workflowDAGFile'
+        File dagFile = params.workflowDAGFile
         String subDAGJobId = getWorkflow().runWorkflow(dagFile)
         getWorkflow().addToParentJobIds(subDAGJobId, dagFileJobId)
         subDAGJobId

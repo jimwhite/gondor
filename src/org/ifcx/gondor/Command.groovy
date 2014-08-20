@@ -211,9 +211,8 @@ class Command extends Closure<Process>
     def _groovy() {
         println "Inspecting Groovy command $_commandPath"
 
-        GroovyShell shell = new GroovyShell()
-        Script script = shell.parse(new File(_commandPath))
-        Class scriptClass = script.getClass();
+        GroovyClassLoader loader = new GroovyClassLoader()
+        Class scriptClass = loader.parseClass(new File(_commandPath))
 
         //TODO: Specializations for WorkflowScript would go here.
         // For now we only need the workflow name which WorkflowCommand is getting from the command path.
@@ -233,25 +232,39 @@ class Command extends Closure<Process>
             println "${parameters.size()} parameters"
 
             parameters.each { parameter ->
-                def name = parameter.name ?: VARARGS_PARAMETER_NAME
+                def cliName = parameter.cliName
                 if (parameter.infile) {
                     if (parameter.outfile) {
-                        System.err.println "Error: Parameter ${it.name} in $_commandPath is marked as both an infile and an outfile."
+                        System.err.println "Error: Parameter ${parameter.name} in $_commandPath is marked as both an infile and an outfile."
                     }
                     def value = null
 //                    if (parameter.initializer) value = parameter.value
-                    parameter.name ? infile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : infile(name:name)
+                    if (cliName == VARARGS_PARAMETER_NAME) {
+                        infile(name: parameter.name, value: value)
+                        infile(name: VARARGS_PARAMETER_NAME, value: value)
+                    } else {
+                        infile(name: parameter.name, value: value,
+                                format: isProcessParameter(cliName) ? { [] } : { [cliName, it] })
+                    }
                 } else if (parameter.outfile) {
                     def value = null
 //                    if (parameter.initializer) value = parameter.value
-                    parameter.name ? outfile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : outfile(name:name)
+                    if (cliName == VARARGS_PARAMETER_NAME) {
+                        outfile(name: parameter.name, value: value)
+                        outfile(name:VARARGS_PARAMETER_NAME, value: value)
+                    } else {
+                        outfile(name: parameter.name, value: value,
+                                format: isProcessParameter(cliName) ? { [] } : { [cliName, it] })
+                    }
                 } else {
-                    if (parameter.name) {
+                    if (cliName == VARARGS_PARAMETER_NAME) {
+//                        arg(name:parameter.name, value:parameter.required ? REQUIRED : OPTIONAL)
+                        arg(name:parameter.name)
+                        arg(name:VARARGS_PARAMETER_NAME)
+                    } else {
                         def value = parameter.required ? REQUIRED : OPTIONAL
 //                        if (parameter.initializer) value = parameter.value
-                        arg(name: name, value: value, format:{ [name, it] })
-                    } else {
-                        arg(name:VARARGS_PARAMETER_NAME, value:parameter.required ? REQUIRED : OPTIONAL)
+                        arg(name:parameter.name, value: value, format:{ [cliName, it] })
                     }
                 }
             }
@@ -268,11 +281,11 @@ class Command extends Closure<Process>
 //                    println annotation
 //                    def name = annotation.names().first()
 //                    def required = annotation.required()
-                    def name = annotation.names()?.size() ? annotation.names().first() : null
+                    def name = annotation.names()?.size() ? annotation.names().first() : VARARGS_PARAMETER_NAME
                     def infile = (field.getAnnotation(InputFile.class) != null || field.getAnnotation(InputDirectory.class) != null )
                     def outfile = (field.getAnnotation(OutputFile.class) != null || field.getAnnotation(OutputDirectory.class) != null )
                     def initializer = field.getAnnotation(Default.class)
-                    parameters << [name: name, required:annotation.required(), initializer:initializer, infile:infile, outfile:outfile]
+                    parameters << [name: field.name, cliName:name, required:annotation.required(), initializer:initializer, infile:infile, outfile:outfile]
                 }
             }
 

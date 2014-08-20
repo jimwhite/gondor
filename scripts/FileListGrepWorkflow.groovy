@@ -58,7 +58,7 @@ cat(paths:[path, *paths].collect { (ls(path:it) |
 
 def fileListGrep = groovy(path:"scripts/FileListGrepCommand.groovy")
 
-fileListGrep('--path':path, '--pattern':pattern, '--result':result, *paths) >>> new File('flsgrep-err.txt')
+fileListGrep(path:path, pattern:pattern, result:result, *paths) >>> new File('flsgrep-err.txt')
 
 groovy(path:"scripts/EchoEnvironment.groovy").call() >> new File(new File("."), "env-dump.txt")
 // That can also be done this way, but it isn't very obvious that we're calling the closure,

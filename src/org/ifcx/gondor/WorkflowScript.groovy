@@ -107,14 +107,14 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     public Process process(WorkflowCommand command, Map<String, Object> params) {
         String subworkflowName = new File(command.getCommandPath()).name - ~/\.groovy$/
-        params.'--workflowName' = subworkflowName
+        params.workflowName = subworkflowName
         //FIXME: Default argument values for commands only work for the first/primary name.
         // Probably need to canonicalize parameter names.
         def subworkflowDir = new File(getDirectory(FileType.WORKFLOW_DIR), subworkflowName)
-        params.'--workflowDirectory' = subworkflowDir
+        params.workflowDirectory = subworkflowDir
         //FIXME: Idea is to use the script introspection to give us the computed properties.
-        params.'--workflowDAGFile' = new File(subworkflowDir, DAG_FILE_NAME)
-        params.'--force' = overwriteDirectories as String
+        params.workflowDAGFile = new File(subworkflowDir, DAG_FILE_NAME)
+        params.overwriteDirectories = overwriteDirectories as String
 
         Process process = new WorkflowProcess(this, command, params)
         processes.add(process)
