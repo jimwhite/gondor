@@ -22,6 +22,7 @@ import org.ifcx.gondor.api.OutputFile
 
 copyEnvironment('PATH')
 
+// Checking Condor formatting.  Could use some proper tests.
 environment.FOO = 'hey there! what\'s up "doc"?'
 environment.BAR = "/yo /   3 spaces'path /"
 // environment.'X=Y' = 'Z'  // Check that we can catch bad names.

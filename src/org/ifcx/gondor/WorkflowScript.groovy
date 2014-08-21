@@ -45,9 +45,10 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     @OutputFile File workflowDAGFile
 
     static final String DAG_FILE_NAME = 'workflow.dag'
-    static final String FILE_DIR_NAME = 'files'
-    static final String LOG_DIR_NAME = 'logs'
-    static final String TMP_DIR_NAME = 'templates'
+
+    static final Map<FileType, String> directoryNames =
+            [(FileType.FILE_DIR):'files', (FileType.LOG_DIR):'logs',
+             (FileType.JOB_DIR):'jobs',(FileType.TMP_DIR):'tmp' ]
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
@@ -67,6 +68,10 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         workflow.setWorkflowName(workflowName)
 
         try {
+            // The DAGman workflow implementation uses the temp path for job command files.
+            setTemporaryFilesPath(getDirectory(FileType.JOB_DIR).path)
+            setLogFilePath(new File(getDirectory(FileType.LOG_DIR), workflowName + '.log').path)
+
             init("")
 
             runWorkflowScriptBody()
@@ -83,7 +88,8 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     @Override
     public void init(String contact) throws DrmaaException {
-        setTemporaryFilesPath(getDirectory(FileType.TMP_DIR).path)
+        // The workflow implementation uses this directory for the generated job command files.
+        setTemporaryFilesPath(getDirectory(FileType.JOB_DIR).path)
         workflow.init(contact)
     }
 
@@ -188,32 +194,33 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     File getDirectory(FileType type) {
         if (directories == null) {
-            directories = [
-                    (FileType.FILE_DIR)  : new File(workflowDirectory, FILE_DIR_NAME)
-                    , (FileType.LOG_DIR) : new File(workflowDirectory, LOG_DIR_NAME)
-                    , (FileType.TMP_DIR) : new File(workflowDirectory, TMP_DIR_NAME)
-                    , (FileType.WORKFLOW_DIR) : workflowDirectory
-            ]
+            // Note that we must do workflow dir first so the overwrite/file exists logic works out.
 
-            directories.each { FileType t, File d ->
-                if (d.exists()) {
+            def types = [FileType.WORKFLOW_DIR, FileType.FILE_DIR, FileType.JOB_DIR, FileType.LOG_DIR, FileType.TMP_DIR]
+            directories = types.collectEntries { FileType t ->
+                def dir = (t == FileType.WORKFLOW_DIR) ? workflowDirectory : new File(workflowDirectory, directoryNames[t])
+                if (dir.exists()) {
                     if (overwriteDirectories) {
-                        if (!d.deleteDir()) {
-                            throw new FailedFileSystemOperation("Failed to delete existing $t directory: $d")
+                        if (!dir.deleteDir()) {
+                            throw new FailedFileSystemOperation("Failed to delete existing $t directory: $dir")
                         }
                     } else {
-                        throw new IllegalWorkflowOperation("$t directory exists but we don't overwrite without --force: $d")
+                        throw new IllegalWorkflowOperation("$t directory exists but we don't overwrite without --force: $dir")
                     }
                 }
-
-                if (!d.mkdirs()) {
-                    throw new FailedFileSystemOperation("Failed to create new $t directory: $d")
+                if (!dir.mkdirs()) {
+                    throw new FailedFileSystemOperation("Failed to create new $t directory: $dir")
                 }
+                [t, dir]
             }
         }
 
         directories[type]
     }
+
+//    File initializeDirectory(FileType t, File d) {
+//
+//    }
 
     Integer directoryNumber = 0
 

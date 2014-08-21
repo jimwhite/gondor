@@ -30,7 +30,7 @@ class Process
 
         Set<String> undefinedParams = params.keySet() - this.params.keySet()
         if (undefinedParams) {
-            throw new IllegalArgumentException("Command ${command.commandPath} called with undefined parameters: $undefinedParams")
+            throw new IllegalArgumentException("Command ${command.getCommandPath()} called with undefined parameters: $undefinedParams")
         }
 
         initializeAttributes()

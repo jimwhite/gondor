@@ -13,7 +13,10 @@ public interface Workflow extends Session {
     String getTemporaryFilesPath();
     void setTemporaryFilesPath(String path);
 
-//    Set<String> getParentJobIds(String childJobId);
+    String getLogFilePath();
+    void setLogFilePath(String path);
+
+    //    Set<String> getParentJobIds(String childJobId);
     void addToParentJobIds(String childJobId, String parentJobId);
 
     String runWorkflow(File dagFile) throws DrmaaException;
