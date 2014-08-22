@@ -1,100 +1,51 @@
 package org.ifcx.gondor;
 
-//import groovy.lang.Closure;
-//import groovy.lang.GroovyInterceptable;
-//import groovy.lang.MissingMethodException;
-//import groovy.lang.MissingPropertyException;
-//import org.apache.ivy.util.StringUtils;
-//import org.codehaus.groovy.runtime.MethodClosure;
-//import org.ggf.drmaa.JobTemplate;
-//
-//import java.util.ArrayList;
-//import java.util.Arrays;
-//import java.util.LinkedHashMap;
-//import java.util.List;
-//import java.util.Map;
-
+import com.beust.jcommander.JCommander;
+import groovy.lang.Binding;
+import groovy.transform.InheritConstructors;
+import groovyx.cli.Default;
 import groovyx.cli.JCommanderScript;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.concurrent.Callable;
+
+//@InheritConstructors
 public abstract class GondorScript extends JCommanderScript {
-//    abstract public Process process(Command command, Map<String, Object> params);
+// Can't just use @InheritConstructors for brevity and general future-proofing because of AST transform ordering.
+    public GondorScript() { this(new Binding()); }
+    public GondorScript(Binding context) { super(context); }
 
 //    @Override
-//    public Object getProperty(String property) {
-//        try {
-//            return super.getProperty(property);
-//        } catch (MissingPropertyException e) {
-////            if ("ls".equals(property)) return "/bin/ls";
-//            if ("ls".equals(property)) {
-//                // TODO: Don't do this, implement a suitable Binding class.
-//                // invokeMethod looks at binding.getVariable not getProperty.
-//                // Fixed by GROOVY-6582 but released when?  Can patch our invokeMethod.
-////                setProperty(property, new MethodClosure(this, "doLs"));
-////                return super.getProperty(property);
-//                return new MethodClosure(lsCommand, "run");
-//            }
-//            if ("wget".equals(property)) return "/usr/bin/wget";
-//            throw e;
-//        }
-//    }
-
-//    public GondorScript()
-//    {
-//        super(new CommandBindings());
+//    public void parseScriptArguments(JCommander jc, String[] args) {
+//        super.parseScriptArguments(jc, args);
+//        runInitializers();
 //    }
 //
-//    @Override
-//    public Object invokeMethod(String name, Object args) {
-//        try {
-//            System.out.println("invoking " + name);
-//            return super.invokeMethod(name, args);
-//        }
-//        // if the method was not found in the current scope (the script's methods)
-//        // let's try to see if there's a method closure with the same name in the binding
-//        catch (MissingMethodException mme) {
-//            try {
-//                if (name.equals(mme.getMethod())) {
-//                    // We do this again here because there is a bug in Script.invokeMethod.
-//                    // See GROOVY-6582.  It will be fixed but has been broken a long time,
-//                    // so make sure we get it right by doing the right thing here.
-//                    Object boundClosure = getProperty(name);
-//                    if (boundClosure != null && boundClosure instanceof Closure) {
-//                        return ((Closure) boundClosure).call((Object[])args);
-//                    } else {
-//                        throw mme;
+//    public void runInitializers() {
+//        Class cls = this.getClass();
+//        while (cls != null) {
+//            Field[] fields = cls.getDeclaredFields();
+//            for (Field field : fields) {
+//                Annotation annotation = field.getAnnotation(Default.class);
+//                if (annotation != null) {
+//                    try {
+//                        field.setAccessible(true);
+//                        Class<Callable> klazz = ((Default) annotation).value();
+//                        Constructor<Callable> constructor = klazz.getConstructor(Object.class, Object.class);
+//                        Callable initializer = constructor.newInstance(this, this);
+//                        Object value = initializer.call();
+//                        field.set(this, value);
+//                    } catch (Exception e) {
+//                        printErrorMessage("Trying to run GondorScript initializers but got exception '" + e
+//                                + "' when getting value of field " + field.getName());
 //                    }
-//                } else {
-//                    throw mme;
 //                }
-//            } catch (MissingPropertyException mpe) {
-//                throw mme;
 //            }
+//
+//            cls = cls.getSuperclass();
 //        }
 //    }
 
-//    LsCommand lsCommand = new LsCommand();
-//
-//    static class LsCommand {
-//        public LsCommand() {
-//        }
-//
-//        public String run() {
-//            return "/bin/ls0";
-//        }
-//
-//        public String run(Object dir, Object pattern) {
-//            List a = new ArrayList();
-//            a.add("/bin/ls1");
-//            a.add(dir.toString());
-//            a.add(pattern.toString());
-//            return StringUtils.join(a.toArray(), " ");
-//        }
-//
-//        public String run(Object... args) {
-//            List a = new ArrayList();
-//            a.add("/bin/ls2");
-//            a.addAll(Arrays.asList(args));
-//            return StringUtils.join(a.toArray(), " ");
-//        }
-//    }
 }

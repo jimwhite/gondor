@@ -27,6 +27,12 @@ class Process
         this.params = command.getArgumentDefaultValues().collectEntries {
             k, v -> [k, params.containsKey(k) ? params[k] : v]
         }
+
+        Set<String> undefinedParams = params.keySet() - this.params.keySet()
+        if (undefinedParams) {
+            throw new IllegalArgumentException("Command ${command.getCommandPath()} called with undefined parameters: $undefinedParams")
+        }
+
         initializeAttributes()
     }
 

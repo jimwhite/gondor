@@ -18,11 +18,13 @@ public class WorkflowImpl implements Workflow {
     private String _contact = ""
     private String _workflowName = "gondor_default_workflow"
     private String _temporaryFilesPath
+    private String _logFilePath
 
     private File temporaryFilesDir
 
-    private File workingDir = new File('.')
-    private File logFile
+    // FIXME: This is here cuz Job looks at it but this isn't really configured to the right place yet.
+    File workingDir = new File('.')
+//    private File logFile
 
     private int job_number = 0
     private int job_template_number = 0
@@ -56,7 +58,9 @@ public class WorkflowImpl implements Workflow {
             throw new InternalException("The file $temporaryFilesDir exists where we want to put the job templates dir.")
         }
 
-        logFile = new File(temporaryFilesDir, workflowName + ".log")
+        if (!logFilePath) setLogFilePath(new File(temporaryFilesDir, workflowName + ".log").path)
+
+//        logFile = new File(logFilePath)
 
         hasInitialized = true;
     }
@@ -82,6 +86,17 @@ public class WorkflowImpl implements Workflow {
     void setTemporaryFilesPath(String path) {
         if (hasInitialized) throw new AlreadyActiveSessionException("Can't change temporaryFilesPath after initialization.")
         _temporaryFilesPath = path
+    }
+
+    @Override
+    String getLogFilePath() {
+        _logFilePath
+    }
+
+    @Override
+    void setLogFilePath(String path) {
+        if (hasInitialized) throw new AlreadyActiveSessionException("Can't change logFilePath after initialization.")
+        _logFilePath = path
     }
 
     @Override

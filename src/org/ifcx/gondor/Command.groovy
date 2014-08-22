@@ -1,9 +1,8 @@
 package org.ifcx.gondor
 
 import com.beust.jcommander.Parameter
-
 import org.ggf.drmaa.JobTemplate
-import org.ifcx.gondor.api.Initializer
+import groovyx.cli.Default
 import org.ifcx.gondor.api.InputDirectory
 import org.ifcx.gondor.api.InputFile
 import org.ifcx.gondor.api.OutputDirectory
@@ -50,15 +49,21 @@ class Command extends Closure<Process>
 
     def type = EXECUTABLE
 
-    Map<String, Object> _argumentDefaultValues = [:]
+    private Map<String, Object> _argumentDefaultValues = [:]
     List<Closure> args = []
+    private String _varArgName = null
 
     WorkflowScript getWorkflowScript() { _workflow }
 
     String getCommandPath() { _commandPath }
 
-    Map<String, Object> getArgumentDefaultValues() {
-        _argumentDefaultValues
+    Map<String, Object> getArgumentDefaultValues() { _argumentDefaultValues }
+
+    String getVarArgsName() { _varArgName }
+
+    def vararg(String name) {
+        if (getVarArgsName()) { throw new IllegalArgumentException("Only one vararg parameter permitted.  Got $name and ${getVarArgsName()}.")}
+        _varArgName = name
     }
 
     def flag(String lit, Closure pat = { it }) {
@@ -112,7 +117,7 @@ class Command extends Closure<Process>
 
     def arg(Map m) {
         if (m.containsKey('format')) {
-            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, m.format)
+            arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED, (Closure) m.format)
         } else {
             arg((String) m.name, m.containsKey('value') ? m.value : REQUIRED)
         }
@@ -212,44 +217,60 @@ class Command extends Closure<Process>
     def _groovy() {
         println "Inspecting Groovy command $_commandPath"
 
-        GroovyShell shell = new GroovyShell()
-        Script script = shell.parse(new File(_commandPath))
-        Class scriptClass = script.getClass();
+        GroovyClassLoader loader = new GroovyClassLoader()
+        Class scriptClass = loader.parseClass(new File(_commandPath))
+
+        //TODO: Specializations for WorkflowScript would go here.
+        // For now we only need the workflow name which WorkflowCommand is getting from the command path.
 
         def parameters = getParameterAnnotations(scriptClass)
 
         if (parameters) {
-            parameters.each {
-                println it
-                Class initializer = it.initializer?.value()
-                if (initializer) {
-                    def val = ((Closure) (initializer.newInstance(script, script))).call()
-                    println(val)
-                    it.value = val
-                }
-            }
+//            parameters.each {
+//                println it
+//                Class initializer = it.initializer?.value()
+//                if (initializer) {
+//                    def val = ((Closure) (initializer.newInstance(script, script))).call()
+//                    println(val)
+//                    it.value = val
+//                }
+//            }
             println "${parameters.size()} parameters"
 
             parameters.each { parameter ->
-                def name = parameter.name ?: VARARGS_PARAMETER_NAME
+                def cliName = parameter.cliName
                 if (parameter.infile) {
                     if (parameter.outfile) {
-                        System.err.println "Error: Parameter ${it.name} in $_commandPath is marked as both an infile and an outfile."
+                        System.err.println "Error: Parameter ${parameter.name} in $_commandPath is marked as both an infile and an outfile."
                     }
                     def value = null
-                    if (parameter.initializer) value = parameter.value
-                    parameter.name ? infile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : infile(name:name)
+//                    if (parameter.initializer) value = parameter.value
+                    if (cliName == VARARGS_PARAMETER_NAME) {
+                        vararg(parameter.name)
+                        infile(name: parameter.name)
+                    } else {
+                        infile(name: parameter.name, value: value,
+                                format: isProcessParameter(cliName) ? { [] } : { [cliName, it] })
+                    }
                 } else if (parameter.outfile) {
                     def value = null
-                    if (parameter.initializer) value = parameter.value
-                    parameter.name ? outfile(name:name, value:value, format: isProcessParameter(name) ? {[]} : {[name, it]}) : outfile(name:name)
-                } else {
-                    if (parameter.name) {
-                        def value = parameter.required ? REQUIRED : OPTIONAL
-                        if (parameter.initializer) value = parameter.value
-                        arg(name: name, value: value, format:{ [name, it] })
+//                    if (parameter.initializer) value = parameter.value
+                    if (cliName == VARARGS_PARAMETER_NAME) {
+                        vararg(parameter.name)
+                        outfile(name: parameter.name)
                     } else {
-                        arg(name:VARARGS_PARAMETER_NAME, value:parameter.required ? REQUIRED : OPTIONAL)
+                        outfile(name: parameter.name, value: value,
+                                format: isProcessParameter(cliName) ? { [] } : { [cliName, it] })
+                    }
+                } else {
+                    if (cliName == VARARGS_PARAMETER_NAME) {
+                        vararg(parameter.name)
+//                        arg(name:parameter.name, value:parameter.required ? REQUIRED : OPTIONAL)
+                        arg(name:parameter.name)
+                    } else {
+                        def value = parameter.required ? REQUIRED : OPTIONAL
+//                        if (parameter.initializer) value = parameter.value
+                        arg(name:parameter.name, value: value, format:{ [cliName, it] })
                     }
                 }
             }
@@ -266,11 +287,11 @@ class Command extends Closure<Process>
 //                    println annotation
 //                    def name = annotation.names().first()
 //                    def required = annotation.required()
-                    def name = annotation.names()?.size() ? annotation.names().first() : null
+                    def name = annotation.names()?.size() ? annotation.names().first() : VARARGS_PARAMETER_NAME
                     def infile = (field.getAnnotation(InputFile.class) != null || field.getAnnotation(InputDirectory.class) != null )
                     def outfile = (field.getAnnotation(OutputFile.class) != null || field.getAnnotation(OutputDirectory.class) != null )
-                    def initializer = field.getAnnotation(Initializer.class)
-                    parameters << [name: name, required:annotation.required(), initializer:initializer, infile:infile, outfile:outfile]
+                    def initializer = field.getAnnotation(Default.class)
+                    parameters << [name: field.name, cliName:name, required:annotation.required(), initializer:initializer, infile:infile, outfile:outfile]
                 }
             }
 
@@ -301,7 +322,13 @@ class Command extends Closure<Process>
      */
     Process call(Map params, Object... args) {
         Map<String, Object> p = (Map) params.clone()
-        p[VARARGS_PARAMETER_NAME] = args as List
+
+        def varArgsName = getVarArgsName()
+        if (args.length > 0 && !varArgsName) {
+            throw new IllegalArgumentException("Call to command ${getCommandPath()} with varargs but it doesn't have a vararg parameter defined.")
+        }
+        p[varArgsName] = args as List
+
         call(p)
     }
 

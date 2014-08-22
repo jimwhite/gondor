@@ -1,14 +1,23 @@
 package org.ifcx.gondor
 
 import com.beust.jcommander.Parameter
+import com.beust.jcommander.converters.BooleanConverter
+import groovy.transform.InheritConstructors
 import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.JobTemplate
 import org.ifcx.drmaa.Workflow
 import org.ifcx.drmaa.WorkflowFactory
-import org.ifcx.gondor.api.Initializer
+import groovyx.cli.Default
+import org.ifcx.gondor.api.OutputDirectory
 import org.ifcx.gondor.api.OutputFile
 
+// Can't use this AST transformation because it happens after ModuleNode generates looks for them.
+// @InheritConstructors
 public abstract class WorkflowScript extends GondorScript implements Workflow {
+    // Can just use @InheritConstructors for brevity and general future-proofing.
+    public WorkflowScript() { this(new Binding()) }
+    public WorkflowScript(Binding context) { super(context) }
+
     /**
      * The workflow script has delegated access (and can override) to all Workflow methods.
      * Note that this field isn't initialized until the <code>run</code> method is called.
@@ -17,16 +26,29 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     @Delegate
     Workflow workflow
 
-    @Parameter(names=['workflowName'])
-//    @Initializer({ getClass().name })
-    String workflowName = getClass().name
+    @Parameter(names=['--workflowName', 'workflowName'])
+    @Default({ getOwner().getClass().name })
+    String workflowName
 
-    @Parameter(names=Process.OUTPUT)
-//    @Initializer({ new File(it.workflowName + '.dag') })
-//    @Initializer({ -> dagFile })
-    @Initializer({ -> new File(workflowName + '.dag') })
-//    @OutputFile(name=Process.OUTPUT) File dagFile = new File(workflowName + '.dag')
-    @OutputFile File dagFile = new File(workflowName + '.dag')
+    @Parameter(names=[ '--workflowDirectory', 'workflowDirectory'])
+    @Default({ -> new File(workflowName) })
+    @OutputDirectory File workflowDirectory
+
+    @Parameter(names=['--force', 'force', '-f'], converter = BooleanConverter.class)
+    @Default({ -> false })
+    boolean overwriteDirectories
+
+    // This can't/shouldn't be specified in command line.
+    // It is computed from the workflowDirectory parameter.
+    @Parameter(names=['--workflowDAGFile', 'workflowDAGFile'])
+    @Default({ -> new File(workflowDirectory, DAG_FILE_NAME) })
+    @OutputFile File workflowDAGFile
+
+    static final String DAG_FILE_NAME = 'workflow.dag'
+
+    static final Map<FileType, String> directoryNames =
+            [(FileType.FILE_DIR):'files', (FileType.LOG_DIR):'logs',
+             (FileType.JOB_DIR):'jobs',(FileType.TMP_DIR):'tmp' ]
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
@@ -45,21 +67,30 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
         workflow.setWorkflowName(workflowName)
 
-//        setTemporaryFilesPath(workflowName + '.jobs')
-
-        init("")
-
         try {
+            // The DAGman workflow implementation uses the temp path for job command files.
+            setTemporaryFilesPath(getDirectory(FileType.JOB_DIR).path)
+            setLogFilePath(new File(getDirectory(FileType.LOG_DIR), workflowName + '.log').path)
+
+            init("")
+
             runWorkflowScriptBody()
 
             runJobsForProcesses()
 
             addWorkflowDependencies()
 
-            createDAGFile(dagFile)
+            createDAGFile(workflowDAGFile)
         } finally {
             exit()
         }
+    }
+
+    @Override
+    public void init(String contact) throws DrmaaException {
+        // The workflow implementation uses this directory for the generated job command files.
+        setTemporaryFilesPath(getDirectory(FileType.JOB_DIR).path)
+        workflow.init(contact)
     }
 
     public Command command(Map params, @DelegatesTo(Command) Closure description) {
@@ -81,6 +112,16 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     }
 
     public Process process(WorkflowCommand command, Map<String, Object> params) {
+        String subworkflowName = new File(command.getCommandPath()).name - ~/\.groovy$/
+        params.workflowName = subworkflowName
+        //FIXME: Default argument values for commands only work for the first/primary name.
+        // Probably need to canonicalize parameter names.
+        def subworkflowDir = new File(getDirectory(FileType.WORKFLOW_DIR), subworkflowName)
+        params.workflowDirectory = subworkflowDir
+        //FIXME: Idea is to use the script introspection to give us the computed properties.
+        params.workflowDAGFile = new File(subworkflowDir, DAG_FILE_NAME)
+        params.overwriteDirectories = overwriteDirectories as String
+
         Process process = new WorkflowProcess(this, command, params)
         processes.add(process)
         process
@@ -153,16 +194,33 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     File getDirectory(FileType type) {
         if (directories == null) {
-            directories = [
-                    (FileType.JOB_DIR)   : new File("jobs")
-                    , (FileType.LOG_DIR) : new File("logs")
-                    , (FileType.TMP_DIR) : new File(workflow.getTemporaryFilesPath())
-                    , (FileType.WORKFLOW_DIR) : new File(".")
-            ]
+            // Note that we must do workflow dir first so the overwrite/file exists logic works out.
+
+            def types = [FileType.WORKFLOW_DIR, FileType.FILE_DIR, FileType.JOB_DIR, FileType.LOG_DIR, FileType.TMP_DIR]
+            directories = types.collectEntries { FileType t ->
+                def dir = (t == FileType.WORKFLOW_DIR) ? workflowDirectory : new File(workflowDirectory, directoryNames[t])
+                if (dir.exists()) {
+                    if (overwriteDirectories) {
+                        if (!dir.deleteDir()) {
+                            throw new FailedFileSystemOperation("Failed to delete existing $t directory: $dir")
+                        }
+                    } else {
+                        throw new IllegalWorkflowOperation("$t directory exists but we don't overwrite without --force: $dir")
+                    }
+                }
+                if (!dir.mkdirs()) {
+                    throw new FailedFileSystemOperation("Failed to create new $t directory: $dir")
+                }
+                [t, dir]
+            }
         }
 
         directories[type]
     }
+
+//    File initializeDirectory(FileType t, File d) {
+//
+//    }
 
     Integer directoryNumber = 0
 
