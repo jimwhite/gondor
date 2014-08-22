@@ -28,8 +28,7 @@ sourceSets {
 dependencies {
     compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.0'
     compile 'com.beust:jcommander:1.35'
-    // compile 'org.gradle:gradle-core:1.11'
-    // compile files('/Users/jim/Projects/Gradle/gradle-1.11/lib/gradle-core-1.11.jar')
+	compile "org.eclipse.jgit:org.eclipse.jgit:3.4.1.201406201815-r"
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
