@@ -96,6 +96,7 @@ class Process
                 head { title("Job " + jobId) }
                 body {
                     h1 "Job $jobId"
+                    h2 { mkp.yieldUnescaped 'JOB ${CONDOR_JOB}' }
                     h2 "Workflow ${workflow.workflowName}"
                     h3 command.getCommandPath()
                     if (params) {
@@ -139,6 +140,8 @@ class Process
         def bash = """#!/bin/sh
 # Pre-script for job $jobId in workflow ${workflow.workflowName}
 #
+script_type=\$1 # pre
+CONDOR_JOB=\$2
 ${ def sb=new StringBuilder() ; infiles.eachWithIndex { f, x -> sb.append("shasum_f$x=`shasum -p '${f.path}'`\n") } ; sb }
 cat > ${metadataFile.path} << EOL
 $html

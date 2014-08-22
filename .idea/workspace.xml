@@ -7,10 +7,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="14ff9e1a-c84f-4d2d-8f59-e9181a85a751" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/ifcx/gondor/IllegalWorkflowOperation.groovy" afterPath="$PROJECT_DIR$/src/org/ifcx/gondor/IllegalWorkflowOperation.groovy" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/ifcx/gondor/Process.groovy" afterPath="$PROJECT_DIR$/src/org/ifcx/gondor/Process.groovy" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/ifcx/drmaa/Workflow.java" afterPath="$PROJECT_DIR$/src/org/ifcx/drmaa/Workflow.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowImpl.groovy" afterPath="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowImpl.groovy" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy" afterPath="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowScript.groovy" afterPath="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowScript.groovy" />
     </list>
     <ignored path="Condor-jDRMAA.iws" />
@@ -88,8 +86,18 @@
       <file leaf-file-name="WorkflowScript.groovy" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowScript.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="1486" max-vertical-offset="4980">
-              <caret line="132" column="40" selection-start-line="132" selection-start-column="40" selection-end-line="132" selection-end-column="40" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="1925" max-vertical-offset="5490">
+              <caret line="163" column="9" selection-start-line="163" selection-start-column="9" selection-end-line="163" selection-end-column="9" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="WorkflowCommand.groovy" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowCommand.groovy">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2850">
+              <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
               <folding />
             </state>
           </provider>
@@ -108,8 +116,8 @@
       <file leaf-file-name="WorkflowProcess.groovy" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="120" max-vertical-offset="570">
-              <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="285">
+              <caret line="8" column="40" selection-start-line="8" selection-start-column="40" selection-end-line="8" selection-end-column="40" />
               <folding />
             </state>
           </provider>
@@ -128,8 +136,8 @@
       <file leaf-file-name="Process.groovy" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/Process.groovy">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.6140652" vertical-offset="1442" max-vertical-offset="3390">
-              <caret line="120" column="89" selection-start-line="120" selection-start-column="89" selection-end-line="120" selection-end-column="89" />
+            <state vertical-scroll-proportion="0.25385934" vertical-offset="1322" max-vertical-offset="3435">
+              <caret line="98" column="61" selection-start-line="98" selection-start-column="61" selection-end-line="98" selection-end-column="61" />
               <folding>
                 <element signature="e#25#71#0" expanded="true" />
               </folding>
@@ -288,15 +296,15 @@
         <option value="$PROJECT_DIR$/src/groovyx/cli/Default.java" />
         <option value="$PROJECT_DIR$/src/groovyx/cli/ScriptConstructorASTTransformation.java" />
         <option value="$PROJECT_DIR$/src/org/ifcx/gondor/GondorScript.java" />
-        <option value="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy" />
         <option value="$PROJECT_DIR$/src/org/ifcx/gondor/Command.groovy" />
         <option value="$PROJECT_DIR$/src/groovyx/cli/JCommanderScript.java" />
         <option value="$PROJECT_DIR$/scripts/FileListGrepWorkflow.groovy" />
         <option value="$PROJECT_DIR$/scripts/TopLevelWorkflow.groovy" />
         <option value="$PROJECT_DIR$/src/org/ifcx/drmaa/Workflow.java" />
         <option value="$PROJECT_DIR$/src/org/ifcx/gondor/IllegalWorkflowOperation.groovy" />
-        <option value="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowScript.groovy" />
         <option value="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowImpl.groovy" />
+        <option value="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy" />
+        <option value="$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowScript.groovy" />
         <option value="$PROJECT_DIR$/src/org/ifcx/gondor/Process.groovy" />
       </list>
     </option>
@@ -1270,7 +1278,7 @@
       <workItem from="1408680238707" duration="16000" />
       <workItem from="1408680341585" duration="7000" />
       <workItem from="1408680349961" duration="1740000" />
-      <workItem from="1408682953206" duration="6092000" />
+      <workItem from="1408682953206" duration="7900000" />
     </task>
     <task id="LOCAL-00001" summary="Fix checking logic.  Could never succeed before.">
       <created>1388813347926</created>
@@ -1308,7 +1316,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="243695000" />
+    <option name="totallyTimeSpent" value="245503000" />
   </component>
   <component name="TodoView" selected-index="0">
     <todo-panel id="selected-file">
@@ -1339,7 +1347,7 @@
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Palette" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3299539" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25898618" sideWeight="0.49960908" order="5" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25854108" sideWeight="0.49960908" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="true" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.37026778" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
@@ -1356,7 +1364,7 @@
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.16346154" sideWeight="0.72" order="1" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4145891" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.4145891" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.21007194" sideWeight="0.28627968" order="10" side_tool="true" content_ui="tabs" />
       <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.32985157" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="8" side_tool="false" content_ui="combo" />
@@ -1407,7 +1415,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/org/ifcx/gondor/Process.groovy</url>
-          <line>175</line>
+          <line>178</line>
           <properties />
           <option name="timeStamp" value="24" />
         </line-breakpoint>
@@ -1425,7 +1433,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy</url>
-          <line>27</line>
+          <line>8</line>
           <properties />
           <option name="timeStamp" value="37" />
         </line-breakpoint>
@@ -1437,15 +1445,9 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy</url>
-          <line>26</line>
+          <line>7</line>
           <properties />
           <option name="timeStamp" value="58" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy</url>
-          <line>8</line>
-          <properties />
-          <option name="timeStamp" value="64" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/org/ifcx/gondor/Process.groovy</url>
@@ -1720,26 +1722,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowCommand.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2925">
-          <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/SubDAG.groovy">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="465">
           <caret line="7" column="6" selection-start-line="7" selection-start-column="6" selection-end-line="7" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="570">
-          <caret line="8" column="0" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -1821,14 +1807,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowScript.groovy">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="1486" max-vertical-offset="4980">
-          <caret line="132" column="40" selection-start-line="132" selection-start-column="40" selection-end-line="132" selection-end-column="40" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowImpl.groovy">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="2380" max-vertical-offset="3960">
@@ -1845,10 +1823,34 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowProcess.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="285">
+          <caret line="8" column="40" selection-start-line="8" selection-start-column="40" selection-end-line="8" selection-end-column="40" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowCommand.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="2925">
+          <caret line="12" column="4" selection-start-line="12" selection-start-column="4" selection-end-line="12" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/WorkflowScript.groovy">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="1925" max-vertical-offset="5490">
+          <caret line="163" column="9" selection-start-line="163" selection-start-column="9" selection-end-line="163" selection-end-column="9" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/org/ifcx/gondor/Process.groovy">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.6140652" vertical-offset="1442" max-vertical-offset="3390">
-          <caret line="120" column="89" selection-start-line="120" selection-start-column="89" selection-end-line="120" selection-end-column="89" />
+        <state vertical-scroll-proportion="0.25385934" vertical-offset="1322" max-vertical-offset="3435">
+          <caret line="98" column="61" selection-start-line="98" selection-start-column="61" selection-end-line="98" selection-end-column="61" />
           <folding>
             <element signature="e#25#71#0" expanded="true" />
           </folding>

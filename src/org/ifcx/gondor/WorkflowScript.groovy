@@ -127,11 +127,45 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     void runJobsForProcesses() { processes.each { runJobForProcess(it) } }
 
-    void runJobForProcess(Process process) {
+//    /**
+//     * A workflow process runs the dag-generating command as usual, but there is an additional job for
+//     * the subdag which is necessarily a child of the dag-generation JOB.  We then use the subdag's
+//     * job id as that of the workflow so that our children (if any) will wait for the subdag to complete.
+//     *
+//     * Note that WorkflowScript.runJobForProcess is going to use the SUBDAG job id for all outputs of
+//     * this command, including the dag file itself.  This is alright as long as no one tries to analyze
+//     * the SUBDAG "job" like other jobs wrt to its input files.  Not really to weird since since
+//     * those two kinds of jobs are pretty different (no pre-/post- scripts etc).
+//     *
+//     * @return
+//     */
+//    String runJobForWorkflow(WorkflowProcess process) {
+//        String dagFileJobId = runJob(process.setUpJob(createJobTemplate()))
+//        File dagFile = process.params.workflowDAGFile
+//        String subDAGJobId = runWorkflow(dagFile)
+//        addToParentJobIds(subDAGJobId, dagFileJobId)
+//        subDAGJobId
+//    }
+
+    String runJobForProcess(Process process) {
         String jobId = runJob(process.setUpJob(createJobTemplate()))
         setJobScript(jobId, process.createPreScript(jobId).path, false)
+
+        // If this is a workflow process then we need to add the SUBDAG node too.
+        if (process instanceof WorkflowProcess) {
+            def dagFile = process.params.workflowDAGFile
+            String subDAGJobId = runWorkflow(dagFile)
+            // The parent of the SUBDAG job is the DAG file generation job.
+            addToParentJobIds(subDAGJobId, jobId)
+            // Children of the DAG file generator use the SUBDAG as their parent.
+            // That is because we assume that only the DAG file is really ready
+            // and that the other outputs could actually be computed by the subworkflow.
+            jobId = subDAGJobId
+        }
+
         processForJobId[jobId] = process
         process.outfiles.each { jobIdForOutputFile[it] = jobId }
+        jobId
     }
 
     void addWorkflowDependencies() {
