@@ -180,6 +180,16 @@ public class WorkflowImpl implements Workflow {
         _getParentJobIds(childJobId).add(parentJobId)
     }
 
+    void setJobScript(String jobId, String scriptPath, boolean postScript = false) {
+        Job job = jobs[jobId]
+        if (job == null) throw new IllegalWorkflowOperation("Invalid job id $jobId")
+        if (postScript) {
+            job.postScript = scriptPath
+        } else {
+            job.preScript = scriptPath
+        }
+    }
+
     @Override
     int getJobProgramStatus(String jobId) throws DrmaaException {
         throw new IllegalWorkflowOperation()

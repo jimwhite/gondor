@@ -1,8 +1,6 @@
 package org.ifcx.gondor
 
 import com.beust.jcommander.Parameter
-import com.beust.jcommander.converters.BooleanConverter
-import groovy.transform.InheritConstructors
 import org.ggf.drmaa.DrmaaException
 import org.ggf.drmaa.JobTemplate
 import org.ifcx.drmaa.Workflow
@@ -130,7 +128,8 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     void runJobsForProcesses() { processes.each { runJobForProcess(it) } }
 
     void runJobForProcess(Process process) {
-        String jobId = process.runJob()
+        String jobId = runJob(process.setUpJob(createJobTemplate()))
+        setJobScript(jobId, process.createPreScript(jobId).path, false)
         processForJobId[jobId] = process
         process.outfiles.each { jobIdForOutputFile[it] = jobId }
     }

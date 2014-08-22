@@ -19,6 +19,8 @@ public interface Workflow extends Session {
     //    Set<String> getParentJobIds(String childJobId);
     void addToParentJobIds(String childJobId, String parentJobId);
 
+    void setJobScript(String jobId, String scriptPath, boolean postScript);
+
     String runWorkflow(File dagFile) throws DrmaaException;
 
     void createDAGFile(File dagFile);

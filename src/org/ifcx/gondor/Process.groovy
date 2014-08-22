@@ -1,5 +1,7 @@
 package org.ifcx.gondor
 
+import groovy.text.markup.MarkupTemplateEngine
+import groovy.xml.StreamingMarkupBuilder
 import org.ggf.drmaa.JobTemplate
 
 class Process
@@ -65,13 +67,7 @@ class Process
         }
     }
 
-    String runJob() {
-        workflow.runJob(createJobTemplate())
-    }
-
-    JobTemplate createJobTemplate() {
-        JobTemplate jt = workflow.createJobTemplate()
-
+    JobTemplate setUpJob(JobTemplate jt) {
         Closure<JobTemplate> jobTemplateCustomizer = command.getJobTemplateCustomizer()
         if (jobTemplateCustomizer != null) { jobTemplateCustomizer(jt) }
 
@@ -89,6 +85,72 @@ class Process
         if (isStdioFileUsed(Process.ERROR) && !isPsuedoStdioFile(Process.ERROR)) jt.setErrorPath(error.path)
 
         jt
+    }
+
+    File createPreScript(String jobId) {
+        File scriptFile = newJobFile("prescript.sh")
+        File metadataFile = newJobFile("index.html")
+
+        def html = new StreamingMarkupBuilder().bind {
+            html {
+                head { title("Job " + jobId) }
+                body {
+                    h1 "Job $jobId"
+                    h2 "Workflow ${workflow.workflowName}"
+                    h3 command.getCommandPath()
+                    if (params) {
+                        table(border:1) {
+                            caption "params"
+                            params.each { k, v -> tr { td(k as String) ; td(v as String) } }
+                        }
+                        br()
+                    }
+                    if (attributes) {
+                        table(border:1) {
+                            caption "attrs"
+                            attributes.each { k, v -> tr { td(k as String) ; td(v as String) } }
+                        }
+                        br()
+                    }
+                    if (infiles) {
+                        table(border:1) {
+                            caption "input files"
+                            infiles.eachWithIndex { f, x ->
+                                tr {
+                                    td(f.path);
+                                    def t = f.isFile() ? 'f' : f.isDirectory() ? 'd' : '?'
+                                    td(t) ; td { mkp.yieldUnescaped("\${shasum_f$x}") }
+                                }
+                            }
+                        }
+                        br()
+                    }
+                    if (outfiles) {
+                        table(border:1) {
+                            caption "output files"
+                            outfiles.each { f -> tr { td(f.path) } }
+                        }
+                        br()
+                    }
+                }
+            }
+        }.toString()
+
+        def bash = """#!/bin/sh
+# Pre-script for job $jobId in workflow ${workflow.workflowName}
+#
+${ def sb=new StringBuilder() ; infiles.eachWithIndex { f, x -> sb.append("shasum_f$x=`shasum -p '${f.path}'`\n") } ; sb }
+cat > ${metadataFile.path} << EOL
+$html
+EOL
+# End of script
+"""
+
+        scriptFile.withPrintWriter { it.print(bash.toString()) }
+
+        // This permission probably works as owner-only, but I don't care to find out right now.
+        scriptFile.setExecutable(true, false)
+        scriptFile
     }
 
     File newJobFile(String s) {
@@ -154,4 +216,5 @@ class Process
         }
         (File) attributes[ERROR]
     }
+
 }
