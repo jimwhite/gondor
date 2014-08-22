@@ -10,7 +10,7 @@ def fileListGrepWorkflow = workflow(groovy(path:"scripts/FileListGrepWorkflow.gr
 
 // scripts/FileListGrepWorkflow.groovy --path ../scripts --regex Go --result ls_grep_res.txt ../src/org/ifcx/gondor ..
 def p = fileListGrepWorkflow(path:new File('scripts'), pattern:'Go'
-        , new File('src/org/ifcx/gondor'), new File('.')
+        , new File('src/org/ifcx/gondor'), new File('doc')
         , result:new File('tl_ls_grep_res.txt'))
 
 p >>> new File('tl_error.txt')

@@ -2,6 +2,7 @@ package org.ifcx.gondor
 
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.xml.StreamingMarkupBuilder
+import groovy.xml.XmlUtil
 import org.ggf.drmaa.JobTemplate
 
 class Process
@@ -102,14 +103,14 @@ class Process
                     if (params) {
                         table(border:1) {
                             caption "params"
-                            params.each { k, v -> tr { td(k as String) ; td(v as String) } }
+                            params.each { k, v -> tr(valign:'top') { td(k as String) ; td(v as String) } }
                         }
                         br()
                     }
                     if (attributes) {
                         table(border:1) {
                             caption "attrs"
-                            attributes.each { k, v -> tr { td(k as String) ; td(v as String) } }
+                            attributes.each { k, v -> tr(valign:'top') { td(k as String) ; td(v as String) } }
                         }
                         br()
                     }
@@ -117,10 +118,12 @@ class Process
                         table(border:1) {
                             caption "input files"
                             infiles.eachWithIndex { f, x ->
-                                tr {
-                                    td(f.path);
+                                tr(valign:'top') {
+                                    td(f.path)
                                     def t = f.isFile() ? 'f' : f.isDirectory() ? 'd' : '?'
-                                    td(t) ; td { mkp.yieldUnescaped("\${shasum_f$x}") }
+                                    td(t)
+                                    td { pre { mkp.yieldUnescaped("\${hashes_i$x}") } }
+                                    td { pre { mkp.yieldUnescaped("\$(htmlencode \"\${paths_i$x}\")") } }
                                 }
                             }
                         }
@@ -129,25 +132,60 @@ class Process
                     if (outfiles) {
                         table(border:1) {
                             caption "output files"
-                            outfiles.each { f -> tr { td(f.path) } }
+                            outfiles.each { f -> tr(valign:'top') { td(f.path) } }
                         }
                         br()
                     }
                 }
             }
-        }.toString()
+        }
+
+        def html_text = XmlUtil.serialize(html).toString()
 
         def bash = """#!/bin/sh
 # Pre-script for job $jobId in workflow ${workflow.workflowName}
 #
 script_type=\$1 # pre
 CONDOR_JOB=\$2
-${ def sb=new StringBuilder() ; infiles.eachWithIndex { f, x -> sb.append("shasum_f$x=`shasum -p '${f.path}'`\n") } ; sb }
+${
+    def sb=new StringBuilder()
+    infiles.eachWithIndex { f, x ->
+        sb.append("paths_i$x=`find '${f.path}' -type f | sort`\n")
+        sb.append("hashes_i$x=`git hash-object --stdin-paths <<<\"\$paths_i$x\"`\n")
+    }
+    sb
+}
+htmlencode() {
+  local string="\${1}"
+  local encoded1=\${string//&/&amp;} # Must do this first!
+  local encoded2=\${encoded1//</&lt;}
+  local encoded3=\${encoded2//>/&gt;}
+  echo "\${encoded3}"
+}
 cat > ${metadataFile.path} << EOL
-$html
+$html_text
 EOL
 # End of script
 """
+
+//        This snippet is escaped for a gstring
+//        # From http://stackoverflow.com/a/10660730
+//        rawurlencode() {
+//            local string="\${1}"
+//            local strlen=\${#string}
+//            local encoded=""
+//
+//            for (( pos=0 ; pos<strlen ; pos++ )); do
+//            c=\${string:\$pos:1}
+//            case "\$c" in
+//                    [-_.~a-zA-Z0-9] ) o="\${c}" ;;
+//            * )               printf -v o '%%%02x' "'\$c"
+//            esac
+//            encoded+="\${o}"
+//            done
+//            echo "\${encoded}"    # You can either set a return variable (FASTER)
+//            REPLY="\${encoded}"   #+or echo the result (EASIER)... or both... :p
+//        }
 
         scriptFile.withPrintWriter { it.print(bash.toString()) }
 
