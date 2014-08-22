@@ -4,11 +4,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="testSrc"/>
 	<classpathentry kind="src" path="resources"/>
-<<<<<<< HEAD
-	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/groovy-2.3.6"/>
-=======
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/groovy-2.4.0.SNAPSHOT"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/org.eclipse.jgit:org.eclipse.jgit:3.4.1.201406201815-r"/>
->>>>>>> stash@{0}
 	<classpathentry kind="output" path="out/production/gondor"/>
 </classpath>

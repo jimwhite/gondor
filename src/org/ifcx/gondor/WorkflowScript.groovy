@@ -34,9 +34,9 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     @Default({ -> new File(workflowName) })
     @OutputDirectory File workflowDirectory
 
-    @Parameter(names=['--force', 'force', '-f'], converter = BooleanConverter.class)
-    @Default({ -> false })
-    boolean overwriteDirectories
+//    @Parameter(names=['--force', 'force', '-f'], converter = BooleanConverter.class)
+//    @Default({ -> false })
+//    boolean overwriteDirectories
 
     // This can't/shouldn't be specified in command line.
     // It is computed from the workflowDirectory parameter.
@@ -45,6 +45,8 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     @OutputFile File workflowDAGFile
 
     static final String DAG_FILE_NAME = 'workflow.dag'
+
+    Map<FileType, File> directories = [:]
 
     static final Map<FileType, String> directoryNames =
             [(FileType.FILE_DIR):'files', (FileType.LOG_DIR):'logs',
@@ -55,8 +57,6 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     Map<File, String> jobIdForOutputFile = [:]
 
     Map<String, String> environment = [:]
-
-    Map<FileType, File> directories
 
     protected abstract Object runWorkflowScriptBody();
 
@@ -120,7 +120,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
         params.workflowDirectory = subworkflowDir
         //FIXME: Idea is to use the script introspection to give us the computed properties.
         params.workflowDAGFile = new File(subworkflowDir, DAG_FILE_NAME)
-        params.overwriteDirectories = overwriteDirectories as String
+//        params.overwriteDirectories = overwriteDirectories as String
 
         Process process = new WorkflowProcess(this, command, params)
         processes.add(process)
@@ -193,29 +193,19 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 //    }
 
     File getDirectory(FileType type) {
-        if (directories == null) {
-            // Note that we must do workflow dir first so the overwrite/file exists logic works out.
+        File dir = directories[type]
 
-            def types = [FileType.WORKFLOW_DIR, FileType.FILE_DIR, FileType.JOB_DIR, FileType.LOG_DIR, FileType.TMP_DIR]
-            directories = types.collectEntries { FileType t ->
-                def dir = (t == FileType.WORKFLOW_DIR) ? workflowDirectory : new File(workflowDirectory, directoryNames[t])
-                if (dir.exists()) {
-                    if (overwriteDirectories) {
-                        if (!dir.deleteDir()) {
-                            throw new FailedFileSystemOperation("Failed to delete existing $t directory: $dir")
-                        }
-                    } else {
-                        throw new IllegalWorkflowOperation("$t directory exists but we don't overwrite without --force: $dir")
-                    }
-                }
+        if (dir == null) {
+            dir = (type == FileType.WORKFLOW_DIR) ? workflowDirectory : new File(workflowDirectory, directoryNames[type])
+            if (!dir.exists()) {
                 if (!dir.mkdirs()) {
-                    throw new FailedFileSystemOperation("Failed to create new $t directory: $dir")
+                    throw new FailedFileSystemOperation("Failed to create new $type directory: $dir")
                 }
-                [t, dir]
             }
+            directories[type] = dir
         }
 
-        directories[type]
+        dir
     }
 
 //    File initializeDirectory(FileType t, File d) {
