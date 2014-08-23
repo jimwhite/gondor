@@ -162,9 +162,9 @@ htmlencode() {
   local encoded3=\${encoded2//>/&gt;}
   echo "\${encoded3}"
 }
-cat > ${metadataFile.path} << EOL
+cat > ${metadataFile.path} << END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
 $html_text
-EOL
+END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
 # End of script
 """
 
