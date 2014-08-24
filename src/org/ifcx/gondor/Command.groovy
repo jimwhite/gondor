@@ -10,6 +10,7 @@ import org.ifcx.gondor.api.OutputFile
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.Field
+import java.security.MessageDigest
 
 // first-stage/PARSE/parseIt -l399 -N50 first-stage/DATA/EN/ $*
 // parse_nbest = gondor.condor_command(new File(bllip_dir, 'first-stage/PARSE/parseIt'), ['-K.flag', '-l400.flag', '-N50.flag', 'model.in', 'input.in'])
@@ -340,4 +341,27 @@ class Command extends Closure<Process>
         getWorkflowScript().process(this, params)
     }
 
+    /**
+     * Get unique command identifier.
+     * Currently a SHA1 of the path, null byte, then the contents of the command file.
+     * TODO: Get id that includes dependencies which will be automagic when we build it.
+     *
+     * @return
+     */
+    def getIdentifier() {
+        MessageDigest md = MessageDigest.getInstance("SHA1")
+        String path = getCommandPath()
+        // Header
+        md.update(path.getBytes("UTF-8"))
+        md.update((byte) 0)
+        new File(path).withInputStream { InputStream is ->
+            byte[] buf = 40000
+            int len
+            while ((len = is.read(buf)) >= 0) {
+                md.update(buf, 0, len)
+            }
+            // The bytes as a positive (big) integer in hex.
+            new BigInteger(1, md.digest()).toString(16)
+        }
+    }
 }

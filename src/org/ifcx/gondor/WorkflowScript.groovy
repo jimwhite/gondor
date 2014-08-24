@@ -150,6 +150,7 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     String runJobForProcess(Process process) {
         String jobId = runJob(process.setUpJob(createJobTemplate()))
         setJobScript(jobId, process.createPreScript(jobId).path, false)
+        setJobScript(jobId, process.createPostScript(jobId).path, true)
 
         // If this is a workflow process then we need to add the SUBDAG node too.
         if (process instanceof WorkflowProcess) {

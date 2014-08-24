@@ -20,6 +20,8 @@ class Process
 
     Set<String> psuedo_io = []
 
+    File metadataFile
+
     public final static String INPUT = ":input";
     public final static String OUTPUT = ":output";
     public final static String ERROR = ":error";
@@ -89,17 +91,23 @@ class Process
     }
 
     File createPreScript(String jobId) {
+        def commandPath = command.getCommandPath()
+        String commandId = command.getIdentifier()
         File scriptFile = newJobFile("prescript.sh")
-        File metadataFile = newJobFile("index.html")
+        metadataFile = newJobFile("index.html")
 
-        def html = new StreamingMarkupBuilder().bind {
+        Writable html = new StreamingMarkupBuilder().bind {
             html {
-                head { title("Job " + jobId) }
+                def name = new File(commandPath).name
+                head {
+                    title("Command " + name) }
                 body {
-                    h1 "Job $jobId"
-                    h2 { mkp.yieldUnescaped 'JOB ${CONDOR_JOB}' }
-                    h2 "Workflow ${workflow.workflowName}"
-                    h3 command.getCommandPath()
+                    h1 "Command " + name
+                    h2 "Id " + commandId
+                    h3 "Path " + commandPath
+//                    h1 "Job $jobId"
+//                    h2 { mkp.yieldUnescaped 'JOB ${CONDOR_JOB}' }
+//                    h2 "Workflow ${workflow.workflowName}"
                     if (params) {
                         table(border:1) {
                             caption "params"
@@ -140,13 +148,18 @@ class Process
             }
         }
 
-        def html_text = XmlUtil.serialize(html).toString()
+        // An extra step to pretty print the html.
+        def html_text = XmlUtil.serialize(html)
+
+        // Order of the script arguments is determined by the DAG file generator.
+        // See o.i.gondor.Job.printToDAG.  These might live closer together (this probably goes back to WorkflowScript).
 
         def bash = """#!/bin/sh
 # Pre-script for job $jobId in workflow ${workflow.workflowName}
 #
-script_type=\$1 # pre
+script_type=\$1 # pre or post
 CONDOR_JOB=\$2
+
 ${
     def sb=new StringBuilder()
     infiles.eachWithIndex { f, x ->
@@ -162,6 +175,7 @@ htmlencode() {
   local encoded3=\${encoded2//>/&gt;}
   echo "\${encoded3}"
 }
+
 cat > ${metadataFile.path} << END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
 $html_text
 END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
@@ -187,6 +201,34 @@ END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
 //            REPLY="\${encoded}"   #+or echo the result (EASIER)... or both... :p
 //        }
 
+        scriptFile.withPrintWriter { it.print(bash.toString()) }
+
+        // This permission probably works as owner-only, but I don't care to find out right now.
+        scriptFile.setExecutable(true, false)
+        scriptFile
+    }
+
+    File createPostScript(String jobId) {
+        File scriptFile = newJobFile("postscript.sh")
+        File resultFile = newJobFile("results.txt")
+
+        // Order of the script arguments is determined by the DAG file generator.
+        // See o.i.gondor.Job.printToDAG.  These might live closer together (this probably goes back to WorkflowScript).
+
+        def bash = """#!/bin/sh
+# Post-script for job $jobId in workflow ${workflow.workflowName}
+#
+script_type=\$1 # pre or post
+CONDOR_JOB=\$2
+RETURN=\$8
+PRE_SCRIPT_RETURN=\${9}
+cat > ${resultFile.path} << END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
+CONDOR_JOB : \${CONDOR_JOB}
+RETURN : \${RETURN}
+PRE_SCRIPT_RETURN : \${PRE_SCRIPT_RETURN}
+END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
+# End of script
+"""
         scriptFile.withPrintWriter { it.print(bash.toString()) }
 
         // This permission probably works as owner-only, but I don't care to find out right now.
