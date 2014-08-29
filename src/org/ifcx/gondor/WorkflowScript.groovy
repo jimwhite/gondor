@@ -13,6 +13,7 @@ import org.ifcx.gondor.api.OutputFile
 // @InheritConstructors
 public abstract class WorkflowScript extends GondorScript implements Workflow {
     // Can just use @InheritConstructors for brevity and general future-proofing.
+
     public WorkflowScript() { this(new Binding()) }
     public WorkflowScript(Binding context) { super(context) }
 
@@ -47,8 +48,27 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
     Map<FileType, File> directories = [:]
 
     static final Map<FileType, String> directoryNames =
-            [(FileType.FILE_DIR):'files', (FileType.LOG_DIR):'logs',
+            [(FileType.FILE_DIR):'files', (FileType.GIT_DIR):'.git', (FileType.LOG_DIR):'logs',
              (FileType.JOB_DIR):'jobs',(FileType.TMP_DIR):'tmp' ]
+
+    static final def PRE_SCRIPT_USED_JOB_MEMO = 142
+//    static final def PRE_SCRIPT_DAG_ABORT = 146
+
+    static final def POST_SCRIPT_DUPLICATED_JOB = 151
+    static final def POST_SCRIPT_NO_JOB_RESULT = 152
+
+
+    // This fails (Groovy 2.4.0): static final Set<Integer> PRE_SCRIPT_SKIP_CODES = [PRE_SCRIPT_USED_JOB_MEMO]
+    final Set<Integer> PRE_SCRIPT_SKIP_CODES = [PRE_SCRIPT_USED_JOB_MEMO /*, PRE_SCRIPT_DAG_ABORT*/]
+
+//    static final String PRE_SCRIPT_ARGS = '0 $JOB $RETRY $MAX_RETRIES $DAG_STATUS $FAILED_COUNT '
+//
+//    static final String POST_SCRIPT_ARGS = '1 $JOB $RETRY $MAX_RETRIES $DAG_STATUS $FAILED_COUNT ' +
+//            '$JOBID $RETURN $PRE_SCRIPT_RETURN '
+    static final String PRE_SCRIPT_ARGS = '0 $JOB $DAG_STATUS '
+
+    static final String POST_SCRIPT_ARGS = '1 $JOB $DAG_STATUS $RETURN $PRE_SCRIPT_RETURN '
+
 
     List<Process> processes = []
     Map<String, Process> processForJobId = [:]
@@ -149,8 +169,8 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     String runJobForProcess(Process process) {
         String jobId = runJob(process.setUpJob(createJobTemplate()))
-        setJobScript(jobId, process.createPreScript(jobId).path, false)
-        setJobScript(jobId, process.createPostScript(jobId).path, true)
+        setJobPreScript(jobId, process.createPreScript(jobId).path, PRE_SCRIPT_ARGS, PRE_SCRIPT_SKIP_CODES)
+        setJobPostScript(jobId, process.createPostScript(jobId).path, POST_SCRIPT_ARGS)
 
         // If this is a workflow process then we need to add the SUBDAG node too.
         if (process instanceof WorkflowProcess) {

@@ -180,14 +180,21 @@ public class WorkflowImpl implements Workflow {
         _getParentJobIds(childJobId).add(parentJobId)
     }
 
-    void setJobScript(String jobId, String scriptPath, boolean postScript = false) {
+    void setJobPreScript(String jobId, String scriptPath, String args, Set<Integer> preSkipCodes = []) {
         Job job = jobs[jobId]
         if (job == null) throw new IllegalWorkflowOperation("Invalid job id $jobId")
-        if (postScript) {
-            job.postScript = scriptPath
-        } else {
-            job.preScript = scriptPath
-        }
+        if (job.preScript) throw new IllegalStateException("Job PRE Script already set!")
+        job.preScript = scriptPath
+        job.preScriptArgs = args
+        job.preSkipCodes = preSkipCodes
+    }
+
+    void setJobPostScript(String jobId, String scriptPath, String args) {
+        Job job = jobs[jobId]
+        if (job == null) throw new IllegalWorkflowOperation("Invalid job id $jobId")
+        if (job.postScript) throw new IllegalStateException("Job POST Script already set!")
+        job.postScript = scriptPath
+        job.postScriptArgs = args
     }
 
     @Override

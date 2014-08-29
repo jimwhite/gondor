@@ -5,6 +5,7 @@ package org.ifcx.gondor;
  */
 public enum FileType {
     FILE_DIR,
+    GIT_DIR,
     JOB_DIR,
     LOG_DIR,
     WORKFLOW_DIR,

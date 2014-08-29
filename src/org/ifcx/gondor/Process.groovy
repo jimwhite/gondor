@@ -1,6 +1,5 @@
 package org.ifcx.gondor
 
-import groovy.text.markup.MarkupTemplateEngine
 import groovy.xml.StreamingMarkupBuilder
 import groovy.xml.XmlUtil
 import org.ggf.drmaa.JobTemplate
@@ -90,7 +89,7 @@ class Process
         jt
     }
 
-    File createPreScript(String jobId) {
+    File createPreScript(String jobId, boolean allowShortCircuit=true) {
         def commandPath = command.getCommandPath()
         String commandId = command.getIdentifier()
         File scriptFile = newJobFile("prescript.sh")
@@ -157,8 +156,9 @@ class Process
         def bash = """#!/bin/sh
 # Pre-script for job $jobId in workflow ${workflow.workflowName}
 #
-script_type=\$1 # pre or post
+SCRIPT_CALL_TYPE=\$1 # 0 for PRE or 1 for POST
 CONDOR_JOB=\$2
+DAG_STATUS=\$3
 
 ${
     def sb=new StringBuilder()
@@ -170,15 +170,37 @@ ${
 }
 htmlencode() {
   local string="\${1}"
-  local encoded1=\${string//&/&amp;} # Must do this first!
-  local encoded2=\${encoded1//</&lt;}
-  local encoded3=\${encoded2//>/&gt;}
+  local encoded1="\${string//&/&amp;}" # Must do this first!
+  local encoded2="\${encoded1//</&lt;}"
+  local encoded3="\${encoded2//>/&gt;}"
   echo "\${encoded3}"
 }
 
 cat > ${metadataFile.path} << END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
 $html_text
 END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
+
+# Writing the metadata file failed for some reason so we bail.
+if [ \$? -ne 0 ] ; then
+exit \$?
+fi
+
+${ if (allowShortCircuit) { """
+metadata_id=`git hash-object ${metadataFile.path}`
+metadata_ref=refs/heads/job_\${metadata_id}_
+previous_commit_id=`git show-ref \${metadata_ref}`
+if [ \$? -eq 0 ] ; then
+# we've seen this before
+# Copy the previously computed outputs to the job's output locations.
+exit ${WorkflowScript.PRE_SCRIPT_USED_JOB_MEMO}
+else
+# it's new
+exit 0
+fi
+""" } else { """
+exit 0
+"""}
+}
 # End of script
 """
 
@@ -208,9 +230,10 @@ END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
         scriptFile
     }
 
-    File createPostScript(String jobId) {
+    File createPostScript(String jobId, boolean saveMultipleResults = true) {
         File scriptFile = newJobFile("postscript.sh")
         File resultFile = newJobFile("results.txt")
+        File job_git_index_file = newJobFile("git_index")
 
         // Order of the script arguments is determined by the DAG file generator.
         // See o.i.gondor.Job.printToDAG.  These might live closer together (this probably goes back to WorkflowScript).
@@ -218,15 +241,64 @@ END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
         def bash = """#!/bin/sh
 # Post-script for job $jobId in workflow ${workflow.workflowName}
 #
-script_type=\$1 # pre or post
-CONDOR_JOB=\$2
-RETURN=\$8
-PRE_SCRIPT_RETURN=\${9}
+SCRIPT_CALL_TYPE="\$1" # 0 for PRE or 1 for POST
+CONDOR_JOB="\$2"
+DAG_STATUS="\$3"  # 5 for full arg list. See ScriptWorkflow.POST_SCRIPT_ARGS.
+RETURN="\$4"      # 8 for full arg list.
+PRE_SCRIPT_RETURN="\${5}" # 9 for full arg list.
+
+if [ "\$RETURN" == "" ] ; then
+# We didn't get a code.  Hmmm.
+RETURN=${WorkflowScript.POST_SCRIPT_NO_JOB_RESULT}
+fi
+
+#\${WorkflowScript.GIT_CONFIG}
+
+if [ \$RETURN -ne 0 ] ; then
+# Job failed so we fail.
+exit \$RETURN
+fi
+
+# Job completed successfully so let's store the outputs.
+
+metadata_id=`git hash-object ${metadataFile.path}`
+#TODO: check & exit on error
+metadata_ref=refs/heads/job_\${metadata_id}_
+#TODO: check & exit on error
+previous_commit_id=`git show-ref \${metadata_ref}`
+${ if (!saveMultipleResults) { """
+if [ "\$?" -eq "0" ] ; then
+# We've seen this before.
+exit ${WorkflowScript.POST_SCRIPT_DUPLICATED_JOB}
+fi
+""" } else { "" }
+}
+
+# Write process outputs to the branch for this job description.
+SAVED_GIT_FILES_INDEX=\$GIT_FILES_INDEX
+export GIT_FILES_INDEX=${job_git_index_file.path}
+git ls-files -o ${outfiles*.path.join(' ')} | git update-index --add --stdin
+update_exit=\$?
+COMMIT_MSG="commit for job \$metadata_id"
+tree_id=`git write-tree`
+commit_id=`git commit-tree \$tree_id <<< COMMIT_MSG`
+git update-ref refs/heads/job_foo_98738979382_ \$commit_id \$previous_commit_id
+update_ref_exit=\$?
+
 cat > ${resultFile.path} << END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
 CONDOR_JOB : \${CONDOR_JOB}
 RETURN : \${RETURN}
 PRE_SCRIPT_RETURN : \${PRE_SCRIPT_RETURN}
+
+metadata_id=\$metadata_id
+metadata_ref=\$metadata_ref
+previous_commit_id=\$previous_commit_id
+GIT_FILES_INDEX=\$GIT_FILES_INDEX
+update_exit=\$update_exit
+update_ref_exit=\$update_ref_exit
+
 END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
+
 # End of script
 """
         scriptFile.withPrintWriter { it.print(bash.toString()) }
