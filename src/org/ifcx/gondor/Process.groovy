@@ -275,14 +275,19 @@ fi
 }
 
 # Write process outputs to the branch for this job description.
-SAVED_GIT_FILES_INDEX=\$GIT_FILES_INDEX
-export GIT_FILES_INDEX=${job_git_index_file.path}
-git ls-files -o ${outfiles*.path.join(' ')} | git update-index --add --stdin
+# export GIT_INDEX_FILE=${job_git_index_file.path}
+# Listing cached, other (untracked), and modified files.
+# We don't deal with deleted files.
+file_list=`git ls-files -com ${outfiles*.path.join(' ')}`
+ls_files_exit=\$?
+git update-index --add --stdin <<<"\$file_list"
 update_exit=\$?
 COMMIT_MSG="commit for job \$metadata_id"
 tree_id=`git write-tree`
-commit_id=`git commit-tree \$tree_id <<< COMMIT_MSG`
-git update-ref refs/heads/job_foo_98738979382_ \$commit_id \$previous_commit_id
+write_tree_exit=\$?
+commit_id=`git commit-tree "\$tree_id" <<< COMMIT_MSG`
+commit_tree_exit=\$?
+git update-ref "\$metadata_ref" "\$commit_id" "\$previous_commit_id"
 update_ref_exit=\$?
 
 cat > ${resultFile.path} << END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
@@ -293,10 +298,15 @@ PRE_SCRIPT_RETURN : \${PRE_SCRIPT_RETURN}
 metadata_id=\$metadata_id
 metadata_ref=\$metadata_ref
 previous_commit_id=\$previous_commit_id
-GIT_FILES_INDEX=\$GIT_FILES_INDEX
+
+ls_files_exit=\$ls_files_exit
 update_exit=\$update_exit
+write_tree_exit=\$write_tree_exit
+commit_tree_exit=\$commit_tree_exit
 update_ref_exit=\$update_ref_exit
 
+file list
+\$file_list
 END_OF_METADATA_HTML_SCRIPT_HEREDOC_9827312838923u78673
 
 # End of script
