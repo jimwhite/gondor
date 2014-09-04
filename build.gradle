@@ -1,12 +1,30 @@
+apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'idea'
+apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.7
 
-version = '0.1'
+group = 'org.ifcx'
+//name = 'gondor'
+version = '0.1-SNAPSHOT'
+status = 'SNAPSHOT'
 
 repositories {
     mavenCentral()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "$buildDir/repo" // change to point to your repo, e.g. http://my.org/repo
+        }
+    }
 }
 
 sourceSets {
