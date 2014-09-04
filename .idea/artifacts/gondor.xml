@@ -1,9 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="gondor">
-    <output-path>$PROJECT_DIR$/out/artifacts/gondor</output-path>
-    <root id="archive" name="gondor.jar">
-      <element id="module-output" name="gondor" />
-      <element id="dir-copy" path="$PROJECT_DIR$/resources" />
-    </root>
-  </artifact>
-</component>
