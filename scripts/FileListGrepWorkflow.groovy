@@ -1,4 +1,5 @@
-#!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar groovy
+#!/usr/bin/env groovy
+//#!/usr/bin/env CLASSPATH=build/libs/Gondor-0.1.jar groovy
 
 import com.beust.jcommander.Parameter
 import groovy.transform.Field
@@ -20,7 +21,10 @@ import org.ifcx.gondor.api.OutputFile
 @Parameter(description = 'A list of directory paths for additional file lists')
 @InputDirectory @Field List<File> paths
 
-copyEnvironment('PATH')
+copyEnvironment('PATH', 'CLASSPATH')
+
+def outputDir = new File("output")
+outputDir.mkdirs()
 
 // Checking Condor formatting.  Could use some proper tests.
 environment.FOO = 'hey there! what\'s up "doc"?'
@@ -55,13 +59,14 @@ def cat = command(path:'/bin/cat') { infile 'paths' }
 // (ls() | grep(pat:/est/, lineNumbers:true)) >> new File('grep_with_numbers.txt')
 
 cat(paths:[path, *paths].collect { (ls(path:it) |
-        grep(pat:pattern, ignoreCase:true, lineNumbers:true)).output }) >> new File("bin-${result.name}")
+        grep(pat:pattern, ignoreCase:true, lineNumbers:true)).output }) >> new File(outputDir, "bin-${result.name}")
 
-def fileListGrep = groovy(path:"scripts/FileListGrepCommand.groovy")
+def fileListGrep = groovy(path:"gondor/scripts/FileListGrepCommand.groovy")
 
-fileListGrep(path:path, pattern:pattern, result:result, *paths) >>> new File('flsgrep-err.txt')
+fileListGrep(path:path, pattern:pattern, result:result, *paths) >>> new File(outputDir, 'flsgrep-err.txt')
 
-groovy(path:"scripts/EchoEnvironment.groovy").call() >> new File(new File("."), "env-dump.txt")
+groovy(path:"gondor/scripts/EchoEnvironment.groovy").call() >> new File(outputDir, "env-dump.txt")
+
 // That can also be done this way, but it isn't very obvious that we're calling the closure,
 // especially when there are no parameters being passed in the call.
 // groovy(path:"scripts/EchoEnvironment.groovy")() >> new File(new File("."), "env-dump.txt")
