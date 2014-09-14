@@ -169,8 +169,6 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
 
     String runJobForProcess(Process process) {
         String jobId = runJob(process.setUpJob(createJobTemplate()))
-        setJobPreScript(jobId, process.createPreScript(jobId).path, PRE_SCRIPT_ARGS, PRE_SCRIPT_SKIP_CODES)
-        setJobPostScript(jobId, process.createPostScript(jobId).path, POST_SCRIPT_ARGS)
 
         // If this is a workflow process then we need to add the SUBDAG node too.
         if (process instanceof WorkflowProcess) {
@@ -182,6 +180,10 @@ public abstract class WorkflowScript extends GondorScript implements Workflow {
             // That is because we assume that only the DAG file is really ready
             // and that the other outputs could actually be computed by the subworkflow.
             jobId = subDAGJobId
+        } else {
+            // Otherwise it is an ordinary job and we need the pre- and post- scripts.
+            setJobPreScript(jobId, process.createPreScript(jobId).path, PRE_SCRIPT_ARGS, PRE_SCRIPT_SKIP_CODES)
+            setJobPostScript(jobId, process.createPostScript(jobId).path, POST_SCRIPT_ARGS)
         }
 
         processForJobId[jobId] = process
